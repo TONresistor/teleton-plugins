@@ -1,0 +1,21 @@
+{
+  "version": "1.0.0",
+  "plugins": [
+    {
+      "id": "example",
+      "name": "Randomness Toolkit",
+      "description": "Dice roller and random picker",
+      "author": "teleton",
+      "tags": ["games", "utility"],
+      "path": "plugins/example"
+    },
+    {
+      "id": "giftstat",
+      "name": "Giftstat Market Data",
+      "description": "Telegram gift market data -- collections, floor prices, models, stats, history",
+      "author": "teleton",
+      "tags": ["market-data", "ton", "gifts", "trading", "api"],
+      "path": "plugins/giftstat"
+    }
+  ]
+}

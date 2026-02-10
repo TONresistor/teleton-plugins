@@ -1,0 +1,30 @@
+{
+  "id": "giftstat",
+  "name": "Giftstat Market Data",
+  "version": "1.0.0",
+  "description": "Telegram gift market data -- collections, floor prices, models, stats, history",
+  "author": {
+    "name": "teleton",
+    "url": "https://github.com/TONresistor"
+  },
+  "license": "MIT",
+  "entry": "index.js",
+  "teleton": ">=1.0.0",
+  "tools": [
+    { "name": "gift_collections", "description": "List all Telegram gift collections with supply and pricing data" },
+    { "name": "gift_floor_prices", "description": "Get current floor prices by marketplace" },
+    { "name": "gift_models", "description": "List gift model variants and rarities" },
+    { "name": "gift_model_stats", "description": "Get statistics per gift model" },
+    { "name": "gift_model_floor", "description": "Get floor price per gift model" },
+    { "name": "gift_backdrops", "description": "List gift background variants" },
+    { "name": "gift_symbols", "description": "List gift symbol/pattern variants" },
+    { "name": "gift_thematics", "description": "List thematic gift collections" },
+    { "name": "gift_thematic_lines", "description": "List gift lines grouped by thematic category" },
+    { "name": "gift_ton_rate", "description": "Get current TON/USDT exchange rate" },
+    { "name": "gift_price_history", "description": "Get historical floor price data" }
+  ],
+  "permissions": ["bridge"],
+  "tags": ["market-data", "ton", "gifts", "trading", "api"],
+  "repository": "https://github.com/TONresistor/teleton-plugins",
+  "funding": null
+}

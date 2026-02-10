@@ -31,6 +31,7 @@ Teleton loads every `.js` file (or `folder/index.js`) from `~/.teleton/plugins/`
 | Plugin | Description | Tools |
 |--------|-------------|-------|
 | [example](plugins/example/) | Randomness toolkit -- dice roller and random picker | `dice_roll`, `random_pick` |
+| [giftstat](plugins/giftstat/) | Telegram gift market data from Giftstat API | `gift_collections`, `gift_floor_prices`, `gift_models`, +8 more |
 
 ## Quick Start
 
