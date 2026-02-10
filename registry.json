@@ -16,6 +16,14 @@
       "author": "teleton",
       "tags": ["market-data", "ton", "gifts", "trading", "api"],
       "path": "plugins/giftstat"
+    },
+    {
+      "id": "gaspump",
+      "name": "Gas111 Token Launcher",
+      "description": "Launch and manage meme tokens on Gas111/TON",
+      "author": "teleton",
+      "tags": ["token-launch", "ton", "meme-tokens", "trading", "api"],
+      "path": "plugins/gaspump"
     }
   ]
 }

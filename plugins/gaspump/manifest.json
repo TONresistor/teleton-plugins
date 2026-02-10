@@ -1,0 +1,27 @@
+{
+  "id": "gaspump",
+  "name": "Gas111 Token Launcher",
+  "version": "1.0.0",
+  "description": "Launch and manage meme tokens on Gas111/TON",
+  "author": {
+    "name": "teleton",
+    "url": "https://github.com/TONresistor"
+  },
+  "license": "MIT",
+  "entry": "index.js",
+  "teleton": ">=1.0.0",
+  "tools": [
+    { "name": "gas_login", "description": "Log in to Gas111 with Telegram credentials" },
+    { "name": "gas_upload_image", "description": "Upload a token image (base64)" },
+    { "name": "gas_create_token", "description": "Create and launch a new token" },
+    { "name": "gas_update_token", "description": "Update social links on a token" },
+    { "name": "gas_token_info", "description": "Get token details and status" },
+    { "name": "gas_token_search", "description": "Search and list tokens" },
+    { "name": "gas_user_tokens", "description": "List tokens created by a user" },
+    { "name": "gas_token_stats", "description": "Get trading stats for a token" }
+  ],
+  "permissions": ["bridge"],
+  "tags": ["token-launch", "ton", "meme-tokens", "trading", "api"],
+  "repository": "https://github.com/TONresistor/teleton-plugins",
+  "funding": null
+}
