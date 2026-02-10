@@ -1,18 +1,19 @@
 # example
 
-A randomness toolkit plugin that demonstrates the full Teleton plugin API.
+Randomness toolkit -- dice roller and random picker.
+
+Use this plugin as a starting point for your own. Copy the folder, rename it, and replace the tools.
+
+```bash
+cp -r plugins/example plugins/your-plugin
+```
+
+## Tools
 
 | Tool | Description |
 |------|-------------|
 | `dice_roll` | Roll configurable dice (sides, count, modifier) |
 | `random_pick` | Pick a random item from a list of choices |
-
-## What this example demonstrates
-
-- **Parameters**: required vs optional, defaults, different types (integer, string, array)
-- **Context**: using `senderId`, `chatId`, and `isGroup` from the execution context
-- **Error handling**: returning `{ success: false, error: "..." }` for invalid input
-- **Multiple tools**: exporting more than one tool from a single plugin
 
 ## Install
 
@@ -21,7 +22,7 @@ mkdir -p ~/.teleton/plugins
 cp -r plugins/example ~/.teleton/plugins/
 ```
 
-## Usage examples
+## Usage
 
 Ask the AI:
 
@@ -30,7 +31,7 @@ Ask the AI:
 - "Pick randomly between pizza, sushi, and tacos"
 - "Choose someone for the task: Alice, Bob, Charlie"
 
-## Tool schemas
+## Schemas
 
 ### dice_roll
 
@@ -42,6 +43,14 @@ Ask the AI:
 
 ### random_pick
 
-| Param | Type | Required | Description |
-|-------|------|----------|-------------|
-| `choices` | string[] | **Yes** | Options to choose from (min 2) |
+| Param | Type | Required | Default | Description |
+|-------|------|----------|---------|-------------|
+| `choices` | string[] | Yes | -- | Options to choose from (min 2) |
+
+## What this demonstrates
+
+- Optional params with defaults vs required params
+- Different JSON Schema types: integer, string, array
+- Input validation with error returns
+- Using context (`senderId`, `chatId`, `isGroup`)
+- Multiple tools in a single plugin
