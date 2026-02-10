@@ -2,11 +2,13 @@
 
 Token launcher for [Gas111](https://gas111.com) on TON -- create, configure, and monitor meme tokens.
 
+Auth is handled automatically via Telegram WebApp -- no manual tokens needed.
+
 ## Tools
 
 | Tool | Description |
 |------|-------------|
-| `gas_login` | Log in with Telegram credentials |
+| `gas_login` | Log in to Gas111 (auto-auth) |
 | `gas_upload_image` | Upload token image (base64) |
 | `gas_create_token` | Launch a new token |
 | `gas_update_token` | Update social links on a token |
@@ -36,7 +38,7 @@ Ask the AI:
 
 ## Token launch flow
 
-1. Log in with `gas_login` (required for write operations)
+1. Log in with `gas_login` (automatic auth via Telegram WebApp)
 2. Upload your token image with `gas_upload_image`
 3. Create the token with `gas_create_token` (name, ticker, address, image URL)
 4. Monitor with `gas_token_info` (check status, market cap, holders)
@@ -46,24 +48,18 @@ Ask the AI:
 
 ### gas_login
 
-| Param | Type | Required | Description |
-|-------|------|----------|-------------|
-| `auth` | string | Yes | Telegram authorization token |
-| `image_url` | string | No | Profile image URL |
-| `ref_user_id` | integer | No | Referral user ID |
+No parameters. Auth is obtained automatically from Telegram WebApp.
 
 ### gas_upload_image
 
 | Param | Type | Required | Description |
 |-------|------|----------|-------------|
-| `auth` | string | Yes | Authorization token |
 | `image_base64` | string | Yes | Base64-encoded image data |
 
 ### gas_create_token
 
 | Param | Type | Required | Description |
 |-------|------|----------|-------------|
-| `auth` | string | Yes | Authorization token |
 | `name` | string | Yes | Token name |
 | `ticker` | string | Yes | Token ticker symbol |
 | `token_address` | string | Yes | TON contract address |
@@ -81,7 +77,6 @@ Ask the AI:
 
 | Param | Type | Required | Description |
 |-------|------|----------|-------------|
-| `auth` | string | Yes | Authorization token |
 | `token_address` | string | Yes | Token contract address |
 | `tg_channel_link` | string | No | Telegram channel link |
 | `tg_chat_link` | string | No | Telegram chat link |

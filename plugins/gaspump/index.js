@@ -2,13 +2,18 @@
  * Gaspump plugin -- Gas111 token launchpad on TON
  *
  * Create, manage, and search tokens on the Gas111 platform.
- * Authenticated endpoints require a Telegram authorization token.
+ * Auth is obtained automatically via Telegram WebApp (gasPump_bot).
  * Public endpoints (info, search, user list, stats) need no auth.
  */
 
+import { Api } from "telegram";
+
 const API_BASE = "https://api.gas111.com/api/v1";
 
-// Shared fetch helper. Supports GET/POST/PATCH, query params, JSON body, and auth header.
+// ---------------------------------------------------------------------------
+// Shared fetch helper
+// ---------------------------------------------------------------------------
+
 async function gasFetch(path, { method = "GET", params = {}, body = null, auth = null } = {}) {
   const url = new URL(API_BASE + path);
   for (const [key, value] of Object.entries(params)) {
@@ -30,34 +35,72 @@ async function gasFetch(path, { method = "GET", params = {}, body = null, auth =
 }
 
 // ---------------------------------------------------------------------------
+// Auto-auth via Telegram WebApp initData
+// ---------------------------------------------------------------------------
+
+let cachedAuth = null;
+let cachedAuthTime = 0;
+
+const AUTH_TTL = 30 * 60 * 1000; // 30 minutes
+
+async function getGasAuth(bridge) {
+  if (cachedAuth && Date.now() - cachedAuthTime < AUTH_TTL) {
+    return cachedAuth;
+  }
+  const client = bridge.getClient().getClient();
+  const bot = await client.getEntity("gasPump_bot");
+  const result = await client.invoke(
+    new Api.messages.RequestWebView({
+      peer: bot,
+      bot,
+      platform: "android",
+      url: "https://gas111.com",
+    })
+  );
+  const fragment = new URL(result.url).hash.slice(1);
+  const initData = new URLSearchParams(fragment).get("tgWebAppData");
+  if (!initData) {
+    throw new Error("Failed to extract tgWebAppData from WebView response");
+  }
+  cachedAuth = initData;
+  cachedAuthTime = Date.now();
+  return cachedAuth;
+}
+
+async function gasAuthFetch(bridge, path, opts = {}) {
+  const auth = await getGasAuth(bridge);
+  try {
+    return await gasFetch(path, { ...opts, auth });
+  } catch (err) {
+    if (err.message && err.message.includes("Permission denied")) {
+      // Clear cache and retry once with fresh auth
+      cachedAuth = null;
+      cachedAuthTime = 0;
+      const freshAuth = await getGasAuth(bridge);
+      return gasFetch(path, { ...opts, auth: freshAuth });
+    }
+    throw err;
+  }
+}
+
+// ---------------------------------------------------------------------------
 // Tool 1: gas_login
-// Authenticate with Gas111 via Telegram credentials.
 // ---------------------------------------------------------------------------
 
 const gasLogin = {
   name: "gas_login",
   description:
-    "Log in to Gas111 with Telegram credentials. Returns whether the account is new. Required before creating tokens.",
+    "Log in to Gas111. Auth is handled automatically via Telegram WebApp. Returns whether the account is new. Required before creating tokens.",
 
   parameters: {
     type: "object",
-    properties: {
-      auth: { type: "string", description: "Telegram authorization token" },
-      image_url: { type: "string", description: "Profile image URL (optional)" },
-      ref_user_id: { type: "integer", description: "Referral user ID (optional)" },
-    },
-    required: ["auth"],
+    properties: {},
   },
 
-  execute: async (params) => {
+  execute: async (_params, context) => {
     try {
-      const body = {};
-      if (params.image_url !== undefined) body.image_url = params.image_url;
-      if (params.ref_user_id !== undefined) body.ref_user_id = params.ref_user_id;
-      const result = await gasFetch("/users/login", {
+      const result = await gasAuthFetch(context.bridge, "/users/login", {
         method: "POST",
-        auth: params.auth,
-        body: Object.keys(body).length > 0 ? body : null,
       });
       return { success: true, data: result };
     } catch (err) {
@@ -68,28 +111,25 @@ const gasLogin = {
 
 // ---------------------------------------------------------------------------
 // Tool 2: gas_upload_image
-// Upload a base64 image for use as a token icon.
 // ---------------------------------------------------------------------------
 
 const gasUploadImage = {
   name: "gas_upload_image",
   description:
-    "Upload an image for a token. Takes base64-encoded image data, returns the hosted URL. Call before creating a token.",
+    "Upload an image for a token. Takes base64-encoded image data, returns the hosted URL. Call before creating a token. Auth is automatic.",
 
   parameters: {
     type: "object",
     properties: {
-      auth: { type: "string", description: "Authorization token" },
       image_base64: { type: "string", description: "Base64-encoded image data" },
     },
-    required: ["auth", "image_base64"],
+    required: ["image_base64"],
   },
 
-  execute: async (params) => {
+  execute: async (params, context) => {
     try {
-      const result = await gasFetch("/images/upload", {
+      const result = await gasAuthFetch(context.bridge, "/images/upload", {
         method: "POST",
-        auth: params.auth,
         body: { image_base64: params.image_base64 },
       });
       return { success: true, data: result };
@@ -101,18 +141,16 @@ const gasUploadImage = {
 
 // ---------------------------------------------------------------------------
 // Tool 3: gas_create_token
-// Launch a new token on Gas111.
 // ---------------------------------------------------------------------------
 
 const gasCreateToken = {
   name: "gas_create_token",
   description:
-    "Create and launch a new token on Gas111. Requires name, ticker, token address, image URL, and contract version. Optionally add social links and description.",
+    "Create and launch a new token on Gas111. Requires name, ticker, token address, image URL, and contract version. Optionally add social links and description. Auth is automatic.",
 
   parameters: {
     type: "object",
     properties: {
-      auth: { type: "string", description: "Authorization token" },
       name: { type: "string", description: "Token name" },
       ticker: { type: "string", description: "Token ticker symbol" },
       token_address: { type: "string", description: "TON token contract address" },
@@ -126,10 +164,10 @@ const gasCreateToken = {
       website_link: { type: "string", description: "Website URL (optional)" },
       dextype: { type: "string", description: "DEX type (optional)" },
     },
-    required: ["auth", "name", "ticker", "token_address", "image_url", "contract_version"],
+    required: ["name", "ticker", "token_address", "image_url", "contract_version"],
   },
 
-  execute: async (params) => {
+  execute: async (params, context) => {
     try {
       const body = {};
       const bodyFields = [
@@ -140,9 +178,8 @@ const gasCreateToken = {
       for (const field of bodyFields) {
         if (params[field] !== undefined) body[field] = params[field];
       }
-      const result = await gasFetch("/tokens/create", {
+      const result = await gasAuthFetch(context.bridge, "/tokens/create", {
         method: "POST",
-        auth: params.auth,
         body,
       });
       return { success: true, data: result };
@@ -154,37 +191,34 @@ const gasCreateToken = {
 
 // ---------------------------------------------------------------------------
 // Tool 4: gas_update_token
-// Update social links on an existing token.
 // ---------------------------------------------------------------------------
 
 const gasUpdateToken = {
   name: "gas_update_token",
   description:
-    "Update social links on an existing token (Telegram channel, chat, Twitter, website).",
+    "Update social links on an existing token (Telegram channel, chat, Twitter, website). Auth is automatic.",
 
   parameters: {
     type: "object",
     properties: {
-      auth: { type: "string", description: "Authorization token" },
       token_address: { type: "string", description: "Token contract address" },
       tg_channel_link: { type: "string", description: "Telegram channel link" },
       tg_chat_link: { type: "string", description: "Telegram chat link" },
       twitter_link: { type: "string", description: "Twitter/X link" },
       website_link: { type: "string", description: "Website URL" },
     },
-    required: ["auth", "token_address"],
+    required: ["token_address"],
   },
 
-  execute: async (params) => {
+  execute: async (params, context) => {
     try {
       const body = {};
       for (const field of ["tg_channel_link", "tg_chat_link", "twitter_link", "website_link"]) {
         if (params[field] !== undefined) body[field] = params[field];
       }
-      const result = await gasFetch("/tokens/update", {
+      const result = await gasAuthFetch(context.bridge, "/tokens/update", {
         method: "PATCH",
         params: { token_address: params.token_address },
-        auth: params.auth,
         body: Object.keys(body).length > 0 ? body : null,
       });
       return { success: true, data: result };
@@ -196,7 +230,6 @@ const gasUpdateToken = {
 
 // ---------------------------------------------------------------------------
 // Tool 5: gas_token_info
-// Full details on a single token.
 // ---------------------------------------------------------------------------
 
 const gasTokenInfo = {
@@ -226,7 +259,6 @@ const gasTokenInfo = {
 
 // ---------------------------------------------------------------------------
 // Tool 6: gas_token_search
-// Search and list tokens with sorting and filtering.
 // ---------------------------------------------------------------------------
 
 const gasTokenSearch = {
@@ -273,7 +305,6 @@ const gasTokenSearch = {
 
 // ---------------------------------------------------------------------------
 // Tool 7: gas_user_tokens
-// List all tokens created by a specific user.
 // ---------------------------------------------------------------------------
 
 const gasUserTokens = {
@@ -308,7 +339,6 @@ const gasUserTokens = {
 
 // ---------------------------------------------------------------------------
 // Tool 8: gas_token_stats
-// Trading statistics for a token.
 // ---------------------------------------------------------------------------
 
 const gasTokenStats = {
