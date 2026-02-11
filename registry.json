@@ -48,6 +48,22 @@
       "author": "teleton",
       "tags": ["music", "deezer", "search", "inline-bot"],
       "path": "plugins/deezer"
+    },
+    {
+      "id": "giftindex",
+      "name": "GiftIndex ODROB Trading",
+      "description": "Monitor, analyze and trade the Telegram Gifts index on TON",
+      "author": "teleton",
+      "tags": ["trading", "ton", "gifts", "defi"],
+      "path": "plugins/giftindex"
+    },
+    {
+      "id": "stormtrade",
+      "name": "Storm Trade Perpetual Futures",
+      "description": "Trade perpetual futures on Storm Trade DEX — crypto, stocks, forex, commodities",
+      "author": "teleton",
+      "tags": ["trading", "ton", "defi", "perpetual-futures", "derivatives"],
+      "path": "plugins/stormtrade"
     }
   ]
 }

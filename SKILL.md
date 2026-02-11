@@ -169,6 +169,54 @@ execute: async (params, context) => {
 }
 ```
 
+#### On-chain / wallet signing pattern (TON transactions)
+
+For plugins that send on-chain transactions (trading, staking, token deploy…):
+
+```javascript
+import { createRequire } from "node:module";
+import { readFileSync, realpathSync } from "node:fs";
+import { join } from "node:path";
+import { homedir } from "node:os";
+
+const _require = createRequire(realpathSync(process.argv[1]));
+const { Address, SendMode } = _require("@ton/core");
+const { WalletContractV5R1, TonClient, internal } = _require("@ton/ton");
+const { mnemonicToPrivateKey } = _require("@ton/crypto");
+
+const WALLET_FILE = join(homedir(), ".teleton", "wallet.json");
+
+async function getWalletAndClient() {
+  const walletData = JSON.parse(readFileSync(WALLET_FILE, "utf-8"));
+  const keyPair = await mnemonicToPrivateKey(walletData.mnemonic);
+  const wallet = WalletContractV5R1.create({ workchain: 0, publicKey: keyPair.publicKey });
+
+  let endpoint;
+  try {
+    const { getHttpEndpoint } = _require("@orbs-network/ton-access");
+    endpoint = await getHttpEndpoint({ network: "mainnet" });
+  } catch {
+    endpoint = "https://toncenter.com/api/v2/jsonRPC";
+  }
+
+  const client = new TonClient({ endpoint });
+  const contract = client.open(wallet);
+  return { wallet, keyPair, client, contract };
+}
+
+// Usage in execute:
+const { wallet, keyPair, client, contract } = await getWalletAndClient();
+const seqno = await contract.getSeqno();
+await contract.sendTransfer({
+  seqno,
+  secretKey: keyPair.secretKey,
+  sendMode: SendMode.PAY_GAS_SEPARATELY + SendMode.IGNORE_ERRORS,
+  messages: [
+    internal({ to: txParams.to, value: txParams.value, body: txParams.body, bounce: true }),
+  ],
+});
+```
+
 #### WebApp auth pattern (Telegram-authenticated APIs)
 
 ```javascript
@@ -273,7 +321,8 @@ Add to the `plugins` array:
 
 - **ESM only** — `export const tools`, never `module.exports`
 - **JS only** — the plugin loader reads `.js` files only
-- **Tool names** — `snake_case`, globally unique across all plugins
+- **Tool names** — `snake_case`, prefixed with plugin name or short unique prefix (e.g. `gas_`, `storm_`, `gift_`), globally unique
+- **Permissions** — set `"permissions": ["bridge"]` in manifest.json if the plugin uses `context.bridge`, otherwise `[]`
 - **Defaults** — use `??` (nullish coalescing), never `||`
 - **Errors** — always try/catch in execute, return `{ success: false, error }`
 - **Timeouts** — `AbortSignal.timeout(15000)` on all external calls
