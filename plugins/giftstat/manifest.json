@@ -1,7 +1,7 @@
 {
   "id": "giftstat",
   "name": "Giftstat Market Data",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Telegram gift market data -- collections, floor prices, models, stats, history",
   "author": {
     "name": "teleton",
