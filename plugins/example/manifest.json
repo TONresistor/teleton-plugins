@@ -1,7 +1,7 @@
 {
   "id": "example",
   "name": "Randomness Toolkit",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Dice roller and random picker",
   "author": {
     "name": "teleton",
