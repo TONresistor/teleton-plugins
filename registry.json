@@ -40,6 +40,14 @@
       "author": "teleton",
       "tags": ["videos", "search", "inline-bot"],
       "path": "plugins/vid"
+    },
+    {
+      "id": "deezer",
+      "name": "@DeezerMusicBot — Inline Music Search",
+      "description": "Search and send music tracks via Telegram's @DeezerMusicBot inline bot (Deezer)",
+      "author": "teleton",
+      "tags": ["music", "deezer", "search", "inline-bot"],
+      "path": "plugins/deezer"
     }
   ]
 }
