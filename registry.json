@@ -64,6 +64,14 @@
       "author": "teleton",
       "tags": ["trading", "ton", "defi", "perpetual-futures", "derivatives"],
       "path": "plugins/stormtrade"
+    },
+    {
+      "id": "swapcoffee",
+      "name": "swap.coffee DEX Aggregator",
+      "description": "Swap tokens on TON via swap.coffee — best rates across all DEXes",
+      "author": "teleton",
+      "tags": ["defi", "ton", "dex", "swap", "trading", "aggregator"],
+      "path": "plugins/swapcoffee"
     }
   ]
 }

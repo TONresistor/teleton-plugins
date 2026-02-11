@@ -43,6 +43,7 @@ Teleton loads every `.js` file (or `folder/index.js`) from `~/.teleton/plugins/`
 | [giftindex](plugins/giftindex/) | GiftIndex ODROB trading -- monitor and trade Telegram Gifts index on TON | 6 |
 | [gaspump](plugins/gaspump/) | Launch, trade, and manage meme tokens on Gas111/TON | 13 |
 | [stormtrade](plugins/stormtrade/) | Perpetual futures trading on Storm Trade DEX -- crypto, stocks, forex, commodities | 13 |
+| [swapcoffee](plugins/swapcoffee/) | Swap tokens on TON via swap.coffee -- best rates across all DEXes | 6 |
 
 ## Quick Start
 
