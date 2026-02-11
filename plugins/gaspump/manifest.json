@@ -1,7 +1,7 @@
 {
   "id": "gaspump",
   "name": "Gas111 Token Launcher",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Launch and manage meme tokens on Gas111/TON",
   "author": {
     "name": "teleton",
