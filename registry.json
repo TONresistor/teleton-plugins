@@ -24,6 +24,14 @@
       "author": "teleton",
       "tags": ["token-launch", "ton", "meme-tokens", "trading", "api"],
       "path": "plugins/gaspump"
+    },
+    {
+      "id": "pic",
+      "name": "@pic — Inline Image Search",
+      "description": "Search and send images via Telegram's @pic inline bot (Yandex Image Search)",
+      "author": "teleton",
+      "tags": ["images", "search", "inline-bot"],
+      "path": "plugins/pic"
     }
   ]
 }
