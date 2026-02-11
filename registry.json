@@ -80,6 +80,14 @@
       "author": "teleton",
       "tags": ["market-data", "dex", "analytics", "ton", "trading", "defi"],
       "path": "plugins/geckoterminal"
+    },
+    {
+      "id": "dyor",
+      "name": "DYOR Token Analytics",
+      "description": "TON token analytics from DYOR.io -- search, price, trust score, metrics, DEX trades, holders, pools",
+      "author": "teleton",
+      "tags": ["analytics", "ton", "market-data", "trust-score", "defi", "dex"],
+      "path": "plugins/dyor"
     }
   ]
 }

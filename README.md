@@ -44,6 +44,8 @@ Teleton loads every `.js` file (or `folder/index.js`) from `~/.teleton/plugins/`
 | [gaspump](plugins/gaspump/) | Launch, trade, and manage meme tokens on Gas111/TON | 13 |
 | [stormtrade](plugins/stormtrade/) | Perpetual futures trading on Storm Trade DEX -- crypto, stocks, forex, commodities | 13 |
 | [swapcoffee](plugins/swapcoffee/) | Swap tokens on TON via swap.coffee -- best rates across all DEXes | 6 |
+| [geckoterminal](plugins/geckoterminal/) | TON DEX pool and token data -- trending, new, and top pools, trades, OHLCV, batch prices | 10 |
+| [dyor](plugins/dyor/) | TON token analytics from DYOR.io -- search, trust score, price, metrics, DEX trades, holders, pools | 11 |
 
 ## Quick Start
 
