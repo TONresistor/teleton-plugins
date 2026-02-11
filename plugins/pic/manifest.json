@@ -1,7 +1,7 @@
 {
   "id": "pic",
   "name": "@pic — Inline Image Search",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Search and send images via Telegram's @pic inline bot (Yandex Image Search)",
   "author": {
     "name": "teleton",
