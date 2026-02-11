@@ -1,0 +1,57 @@
+{
+  "id": "giftindex",
+  "name": "giftindex",
+  "version": "1.0.0",
+  "description": "GiftIndex ODROB trading - monitor, analyze and trade the Telegram Gifts index on TON",
+  "author": {
+    "name": "teleton",
+    "url": "https://github.com/TONresistor"
+  },
+  "license": "MIT",
+  "entry": "index.js",
+  "teleton": ">=1.0.0",
+  "tools": [
+    {
+      "name": "giftindex_market",
+      "description": "Get GiftIndex market overview: oracle price, ±3% corridor, order book depth, and spread across both order books"
+    },
+    {
+      "name": "giftindex_fair_value",
+      "description": "Calculate the fair value of the GiftIndex token by aggregating floor prices of underlying Telegram Gift collections from multiple marketplaces"
+    },
+    {
+      "name": "giftindex_place_bid",
+      "description": "Place a BUY limit order on the GiftIndex order book. Sends USDT to purchase index tokens at a specified price within the oracle corridor",
+      "params": {
+        "order_book": { "type": "string", "description": "Which order book: 1 or 2" },
+        "amount": { "type": "string", "description": "USDT amount" },
+        "price": { "type": "number", "description": "Price in index units" }
+      }
+    },
+    {
+      "name": "giftindex_place_ask",
+      "description": "Place a SELL limit order on the GiftIndex order book. Sends GiftIndex tokens to sell at a specified price within the oracle corridor",
+      "params": {
+        "order_book": { "type": "string", "description": "Which order book: 1 or 2" },
+        "amount": { "type": "string", "description": "Token amount" },
+        "price": { "type": "number", "description": "Price in index units" }
+      }
+    },
+    {
+      "name": "giftindex_cancel",
+      "description": "Cancel an existing order on the GiftIndex order book and reclaim tokens",
+      "params": {
+        "order_book": { "type": "string", "description": "Which order book: 1 or 2" },
+        "query_id": { "type": "string", "description": "The order's query ID" }
+      }
+    },
+    {
+      "name": "giftindex_portfolio",
+      "description": "View current GiftIndex token balance, USDT balance, open orders, and P&L summary"
+    }
+  ],
+  "permissions": ["bridge"],
+  "tags": ["giftindex", "ton", "trading", "telegram-gifts", "index"],
+  "repository": "https://github.com/TONresistor/teleton-plugins",
+  "funding": null
+}
