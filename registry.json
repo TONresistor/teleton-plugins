@@ -35,8 +35,8 @@
     },
     {
       "id": "vid",
-      "name": "@vid — Inline Video Search",
-      "description": "Search and send videos via Telegram's @vid inline bot",
+      "name": "@vid — Inline YouTube Search",
+      "description": "Search and send YouTube videos via Telegram's @vid inline bot",
       "author": "teleton",
       "tags": ["videos", "search", "inline-bot"],
       "path": "plugins/vid"

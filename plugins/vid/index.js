@@ -1,5 +1,5 @@
 /**
- * Vid plugin -- search and send videos via the @vid inline bot
+ * Vid plugin -- search and send YouTube videos via the @vid inline bot
  *
  * Uses GramJS MTProto to query @vid inline results and send them directly in chat.
  * Messages appear "via @vid" just like typing @vid in the Telegram input field.
@@ -20,7 +20,7 @@ const { Api } = _require("telegram");
 const vid = {
   name: "vid",
   description:
-    "Search and send a video in the current chat using Telegram's @vid inline bot. " +
+    "Search and send a YouTube video in the current chat using Telegram's @vid inline bot (YouTube Search). " +
     "Provide a search query and optionally pick a result by index. The video is sent directly into the chat via @vid.",
 
   parameters: {
@@ -28,7 +28,7 @@ const vid = {
     properties: {
       query: {
         type: "string",
-        description: "Video search query (e.g. 'funny cat', 'TON blockchain', 'cooking tutorial')",
+        description: "YouTube video search query (e.g. 'funny cat', 'TON blockchain', 'cooking tutorial')",
       },
       index: {
         type: "integer",
@@ -56,7 +56,7 @@ const vid = {
       );
 
       if (!results.results || results.results.length === 0) {
-        return { success: false, error: `No videos found for "${params.query}"` };
+        return { success: false, error: `No YouTube videos found for "${params.query}"` };
       }
 
       const index = params.index ?? 0;
