@@ -1,6 +1,6 @@
 # gaspump
 
-Token launcher for [Gas111](https://gas111.com) on TON -- create, configure, and monitor meme tokens.
+Token launcher and trader for [Gas111](https://gas111.com) on TON -- create, trade, and monitor meme tokens.
 
 Auth is handled automatically via Telegram WebApp -- no manual tokens needed.
 
@@ -8,14 +8,19 @@ Auth is handled automatically via Telegram WebApp -- no manual tokens needed.
 
 | Tool | Description |
 |------|-------------|
-| `gas_login` | Log in to Gas111 (auto-auth) |
-| `gas_upload_image` | Upload token image (base64) |
-| `gas_create_token` | Launch a new token |
-| `gas_update_token` | Update social links on a token |
+| `gas_launch_token` | Launch a new token (login, upload, deploy, register -- all in one) |
+| `gas_buy` | Buy tokens on a bonding curve |
+| `gas_sell` | Sell tokens back to bonding curve |
+| `gas_portfolio` | Agent's token portfolio and balances |
 | `gas_token_info` | Get token details and status |
 | `gas_token_search` | Search and list tokens |
 | `gas_user_tokens` | List tokens created by a user |
 | `gas_token_stats` | Get trading stats for a token |
+| `gas_holders` | List token holders |
+| `gas_top_traders` | Top traders for a token (PnL, volume) |
+| `gas_price_chart` | Price history chart data |
+| `gas_king` | Current King of the Hill token |
+| `gas_update_token` | Update social links on a token |
 
 ## Install
 
@@ -28,60 +33,72 @@ cp -r plugins/gaspump ~/.teleton/plugins/
 
 Ask the AI:
 
-- "Create a new token called PEPE with ticker $PEPE"
-- "Upload this image for my token"
+- "Launch a token called PEPE with this image"
+- "Buy 2 TON of token EQx..."
+- "Sell all my tokens on EQx..."
+- "Show my portfolio"
+- "Who are the top traders on EQx...?"
+- "What's the current King of the Hill?"
 - "Check the status of token EQx..."
 - "Search for tokens sorted by 24h volume"
-- "Show all my tokens"
-- "What are the trading stats for token EQx..."
-- "Update the Twitter link on my token to https://x.com/mytoken"
 
 ## Token launch flow
 
-1. Log in with `gas_login` (automatic auth via Telegram WebApp)
-2. Upload your token image with `gas_upload_image`
-3. Create the token with `gas_create_token` (name, ticker, address, image URL)
-4. Monitor with `gas_token_info` (check status, market cap, holders)
-5. Add social links with `gas_update_token`
+1. Provide name, ticker, image (base64 or URL), and optional description
+2. `gas_launch_token` does everything: login, upload image, deploy on-chain, register on API
+3. Monitor with `gas_token_info` (check status after ~15 seconds)
+4. Add social links with `gas_update_token`
+5. Buy more with `gas_buy`, sell with `gas_sell`
+
+## Dependencies
+
+Requires at runtime (provided by teleton):
+- `@ton/core` — Cell building, address computation
+- `@ton/ton` — Wallet contract, TonClient
+- `@ton/crypto` — Mnemonic to private key
+- `@orbs-network/ton-access` (optional) — Decentralized RPC endpoint
+- `telegram` (GramJS) — Telegram MTProto client
+
+Agent wallet at `~/.teleton/wallet.json` is used for signing all on-chain transactions.
 
 ## Schemas
 
-### gas_login
+### gas_launch_token
 
-No parameters. Auth is obtained automatically from Telegram WebApp.
+Signs and sends the deploy transaction from the agent's wallet. All-in-one pipeline.
 
-### gas_upload_image
+| Param | Type | Required | Default | Description |
+|-------|------|----------|---------|-------------|
+| `name` | string | Yes | -- | Token name |
+| `ticker` | string | Yes | -- | Token ticker symbol |
+| `image_base64` | string | No | -- | Base64-encoded image (use this OR image_url) |
+| `image_url` | string | No | -- | Already-hosted image URL (use this OR image_base64) |
+| `description` | string | No | "" | Token description (suffix added auto) |
+| `dex_type` | string | No | "dedust" | "dedust" or "stonfi" |
+| `nonce` | integer | No | 0 | Increment on address collision |
+| `buy_ton` | string | No | "5" | TON amount for initial buy (min 0.3) |
+| `tg_channel_link` | string | No | -- | Telegram channel link |
+| `tg_chat_link` | string | No | -- | Telegram chat link |
+| `twitter_link` | string | No | -- | Twitter/X link |
+| `website_link` | string | No | -- | Website URL |
 
-| Param | Type | Required | Description |
-|-------|------|----------|-------------|
-| `image_base64` | string | Yes | Base64-encoded image data |
+### gas_buy
 
-### gas_create_token
+| Param | Type | Required | Default | Description |
+|-------|------|----------|---------|-------------|
+| `token_address` | string | Yes | -- | Token contract address |
+| `buy_ton` | string | No | "1" | TON amount to spend |
 
-| Param | Type | Required | Description |
-|-------|------|----------|-------------|
-| `name` | string | Yes | Token name |
-| `ticker` | string | Yes | Token ticker symbol |
-| `token_address` | string | Yes | TON contract address |
-| `image_url` | string | Yes | Image URL from gas_upload_image |
-| `contract_version` | integer | Yes | Contract version number |
-| `audio_url` | string | No | Audio URL for audio tokens |
-| `description` | string | No | Token description |
-| `tg_channel_link` | string | No | Telegram channel link |
-| `tg_chat_link` | string | No | Telegram chat link |
-| `twitter_link` | string | No | Twitter/X link |
-| `website_link` | string | No | Website URL |
-| `dextype` | string | No | DEX type |
-
-### gas_update_token
+### gas_sell
 
 | Param | Type | Required | Description |
 |-------|------|----------|-------------|
 | `token_address` | string | Yes | Token contract address |
-| `tg_channel_link` | string | No | Telegram channel link |
-| `tg_chat_link` | string | No | Telegram chat link |
-| `twitter_link` | string | No | Twitter/X link |
-| `website_link` | string | No | Website URL |
+| `sell_amount` | string | Yes | Amount of jettons to sell (in base units) |
+
+### gas_portfolio
+
+No parameters. Uses the agent's Telegram identity automatically.
 
 ### gas_token_info
 
@@ -114,6 +131,40 @@ No parameters. Auth is obtained automatically from Telegram WebApp.
 | Param | Type | Required | Description |
 |-------|------|----------|-------------|
 | `token_address` | string | Yes | Token contract address |
+
+### gas_holders
+
+| Param | Type | Required | Default | Description |
+|-------|------|----------|---------|-------------|
+| `token_address` | string | Yes | -- | Token contract address |
+| `limit` | integer | No | 50 | Max results |
+
+### gas_top_traders
+
+| Param | Type | Required | Default | Description |
+|-------|------|----------|---------|-------------|
+| `token_address` | string | Yes | -- | Token contract address |
+| `limit` | integer | No | 20 | Max results |
+
+### gas_price_chart
+
+| Param | Type | Required | Description |
+|-------|------|----------|-------------|
+| `token_address` | string | Yes | Token contract address |
+
+### gas_king
+
+No parameters.
+
+### gas_update_token
+
+| Param | Type | Required | Description |
+|-------|------|----------|-------------|
+| `token_address` | string | Yes | Token contract address |
+| `tg_channel_link` | string | No | Telegram channel link |
+| `tg_chat_link` | string | No | Telegram chat link |
+| `twitter_link` | string | No | Twitter/X link |
+| `website_link` | string | No | Website URL |
 
 ## API reference
 
