@@ -32,6 +32,14 @@
       "author": "teleton",
       "tags": ["images", "search", "inline-bot"],
       "path": "plugins/pic"
+    },
+    {
+      "id": "vid",
+      "name": "@vid — Inline Video Search",
+      "description": "Search and send videos via Telegram's @vid inline bot",
+      "author": "teleton",
+      "tags": ["videos", "search", "inline-bot"],
+      "path": "plugins/vid"
     }
   ]
 }

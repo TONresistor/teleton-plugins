@@ -1,0 +1,20 @@
+{
+  "id": "vid",
+  "name": "@vid — Inline Video Search",
+  "version": "1.0.0",
+  "description": "Search and send videos via Telegram's @vid inline bot",
+  "author": {
+    "name": "teleton",
+    "url": "https://github.com/TONresistor"
+  },
+  "license": "MIT",
+  "entry": "index.js",
+  "teleton": ">=1.0.0",
+  "tools": [
+    { "name": "vid", "description": "Search and send a video in the current chat via @vid" }
+  ],
+  "permissions": ["bridge"],
+  "tags": ["videos", "search", "inline-bot"],
+  "repository": "https://github.com/TONresistor/teleton-plugins",
+  "funding": null
+}
