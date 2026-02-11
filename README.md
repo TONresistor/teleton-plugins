@@ -3,7 +3,7 @@
 [![MIT License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](https://github.com/TONresistor/teleton-plugins/pulls)
 [![ESM only](https://img.shields.io/badge/ESM-only-yellow.svg)](#)
-[![Telegram](https://img.shields.io/badge/Telegram-bot-26A5E4.svg?logo=telegram)](https://t.me/)
+[![Telegram](https://img.shields.io/badge/Telegram-bot-26A5E4.svg?logo=telegram)](https://t.me/teloton_bot)
 
 Community plugin directory for [Teleton](https://github.com/TONresistor/tonnet-ai) -- the Telegram AI agent on TON. Drop a plugin in `~/.teleton/plugins/` and it's live. No build step, no config.
 

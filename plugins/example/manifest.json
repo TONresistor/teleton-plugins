@@ -14,7 +14,7 @@
     { "name": "dice_roll", "description": "Roll configurable dice with sides, count, and modifier" },
     { "name": "random_pick", "description": "Randomly pick one item from a list of choices" }
   ],
-  "permissions": ["bridge"],
+  "permissions": [],
   "tags": ["games", "utility"],
   "repository": "https://github.com/TONresistor/teleton-plugins",
   "funding": null

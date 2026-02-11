@@ -174,9 +174,30 @@ try {
 - **`manifest.json` is required** — plugins without it won't be listed in the registry
 - Tool `name` must be globally unique — if it collides with a built-in or another plugin, yours is silently skipped
 - **Tool names must be prefixed** with the plugin name or a short unique prefix (e.g. `gas_`, `storm_`, `gift_`)
+- **Defaults** — use `??` (nullish coalescing), never `||` for default values
+- **No npm deps** — plugins cannot add npm dependencies. Use native `fetch` and packages provided by the teleton runtime (`@ton/core`, `@ton/ton`, `@ton/crypto`, `telegram`)
 - **Use `AbortSignal.timeout()`** on all `fetch()` calls — never let a network request hang without a timeout
-- **Declare `permissions: ["bridge"]`** in `manifest.json` if your plugin uses `context.bridge`
+- **GramJS** — always use `createRequire(realpathSync(process.argv[1]))` to import CJS packages, never `import from "telegram"`
+- **Client chain** — `context.bridge.getClient().getClient()` for the raw GramJS MTProto client
+- **Declare `permissions: ["bridge"]`** in `manifest.json` if your plugin uses `context.bridge`, otherwise `[]`
 - Your tools are available in both DMs and group chats (no scope filtering for plugins)
+
+## Local testing
+
+To test a plugin without restarting Teleton, verify it loads and exports the correct number of tools:
+
+```bash
+node -e "import('./plugins/your-plugin/index.js').then(m => console.log(m.tools.length, 'tools exported'))"
+```
+
+To install it for live testing with Teleton:
+
+```bash
+mkdir -p ~/.teleton/plugins
+cp -r plugins/your-plugin ~/.teleton/plugins/
+```
+
+Then restart Teleton and check the console output.
 
 ## Verify it works
 

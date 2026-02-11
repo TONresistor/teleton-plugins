@@ -22,6 +22,7 @@ Determine:
   - **Inline bot** — wraps a Telegram inline bot (@pic, @vid, @gif, @DeezerMusicBot…)
   - **Public API** — calls an external REST API, no auth
   - **Auth API** — external API with Telegram WebApp auth
+  - **On-chain** — signs and sends TON transactions from the agent wallet
   - **Local logic** — pure JavaScript, no external calls
 - **Tools** — list of tool names, what each does, parameters
 - **Does it need GramJS?** — yes for inline bots and WebApp auth
@@ -255,12 +256,14 @@ async function getAuth(bridge, botUsername, webAppUrl) {
   "tools": [
     { "name": "tool_name", "description": "Short description" }
   ],
-  "permissions": ["bridge"],
+  "permissions": [],
   "tags": ["tag1", "tag2"],
   "repository": "https://github.com/TONresistor/teleton-plugins",
   "funding": null
 }
 ```
+
+> Set `"permissions": ["bridge"]` only if the plugin uses `context.bridge`. Default is `[]`.
 
 ### README.md
 
