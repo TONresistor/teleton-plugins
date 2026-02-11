@@ -1,65 +1,66 @@
-# /plugin — Teleton Plugin Builder
+# Teleton Plugin Builder
 
-You are building a plugin for **Teleton**, a Telegram AI agent on TON. The user will describe what plugin or tools they want. Your job is to **plan, validate with the user, then build** the complete plugin.
-
-## User input
-
-The user's request is: $ARGUMENTS
-
-If no arguments were provided, ask the user what plugin they want to build using AskUserQuestion.
+You are building a plugin for **Teleton**, a Telegram AI agent on TON. Ask the user what plugin or tools they want to build, then follow this workflow.
 
 ---
 
-## Step 1: Analyze the request
+## Workflow
 
-Determine from the user's description:
-
-1. **Plugin name** — short, lowercase, used as folder name (e.g. `pic`, `deezer`, `weather`)
-2. **Plugin type** — one of:
-   - **Inline bot** — wraps a Telegram inline bot (@pic, @vid, @gif, @DeezerMusicBot, etc.)
-   - **Public API** — calls an external REST API (no auth needed)
-   - **Auth API** — calls an external API with Telegram WebApp auth
-   - **Local logic** — pure JavaScript, no external calls
-3. **Tools** — list of tool names, what each does, parameters needed
-4. **Dependencies** — does it need GramJS (`Api` from `telegram`)? Does it need `context.bridge`?
+1. **Ask** the user what they want (plugin name, what it does, which API or bot)
+2. **Plan** — present a structured plan (see below) and ask for validation
+3. **Build** — create all files once the user approves
+4. **Install** — copy to `~/.teleton/plugins/` and restart
 
 ---
 
-## Step 2: Present the plan
+## Step 1 — Understand the request
 
-Present a clear, structured plan to the user and **ask them to validate** before building. Use this format:
+Determine:
+
+- **Plugin name** — short, lowercase folder name (e.g. `pic`, `deezer`, `weather`)
+- **Plugin type**:
+  - **Inline bot** — wraps a Telegram inline bot (@pic, @vid, @gif, @DeezerMusicBot…)
+  - **Public API** — calls an external REST API, no auth
+  - **Auth API** — external API with Telegram WebApp auth
+  - **Local logic** — pure JavaScript, no external calls
+- **Tools** — list of tool names, what each does, parameters
+- **Does it need GramJS?** — yes for inline bots and WebApp auth
+
+---
+
+## Step 2 — Present the plan
+
+Show this to the user and **wait for approval**:
 
 ```
-## Plugin: [name]
+Plugin: [name]
 Type: [Inline bot | Public API | Auth API | Local logic]
 
-### Tools
+Tools:
+| Tool        | Description              | Params                              |
+|-------------|--------------------------|-------------------------------------|
+| `tool_name` | What it does             | `query` (string, required), `index` (int, optional) |
 
-| Tool | Description | Params |
-|------|-------------|--------|
-| `tool_name` | What it does | `param1` (string, required), `param2` (int, optional) |
-
-### Files to create
+Files:
 - plugins/[name]/index.js
 - plugins/[name]/manifest.json
 - plugins/[name]/README.md
 - registry.json (update)
-
-### Install
-cp -r plugins/[name] ~/.teleton/plugins/
 ```
 
-Use **AskUserQuestion** to ask the user to validate the plan or adjust it.
+Do NOT build until the user says go.
 
 ---
 
-## Step 3: Build the plugin
+## Step 3 — Build
 
-Once the user validates, create all files following these **exact patterns**.
+Create all files in `plugins/[name]/` following the patterns below.
 
-### 3.1 — index.js structure
+### index.js
 
-#### If plugin needs GramJS (inline bots, WebApp auth):
+**ESM only** — always `export const tools = [...]`, never `module.exports`.
+
+#### GramJS import (only if plugin needs Telegram MTProto)
 
 ```javascript
 import { createRequire } from "node:module";
@@ -69,7 +70,7 @@ const _require = createRequire(realpathSync(process.argv[1]));
 const { Api } = _require("telegram");
 ```
 
-#### If plugin only calls external APIs:
+#### API fetch helper (for plugins calling external APIs)
 
 ```javascript
 const API_BASE = "https://api.example.com";
@@ -89,23 +90,23 @@ async function apiFetch(path, params = {}) {
 }
 ```
 
-#### Tool definition:
+#### Tool definition
 
 ```javascript
 const myTool = {
   name: "tool_name",
-  description: "LLM reads this to decide when to call the tool. Be specific and clear.",
+  description: "The LLM reads this to decide when to call the tool. Be specific.",
   parameters: {
     type: "object",
     properties: {
-      query: { type: "string", description: "What this param does" },
-      index: { type: "integer", description: "Optional param", minimum: 0, maximum: 49 },
+      query: { type: "string", description: "Search query" },
+      index: { type: "integer", description: "Which result (0 = first)", minimum: 0, maximum: 49 },
     },
     required: ["query"],
   },
   execute: async (params, context) => {
     try {
-      // ... logic ...
+      // logic here
       return { success: true, data: { result: "..." } };
     } catch (err) {
       return { success: false, error: err.message };
@@ -116,7 +117,7 @@ const myTool = {
 export const tools = [myTool];
 ```
 
-#### Inline bot pattern (for @pic, @vid, @gif, @DeezerMusicBot, etc.):
+#### Inline bot pattern (@pic, @vid, @gif, @DeezerMusicBot…)
 
 ```javascript
 execute: async (params, context) => {
@@ -127,10 +128,7 @@ execute: async (params, context) => {
 
     const results = await client.invoke(
       new Api.messages.GetInlineBotResults({
-        bot,
-        peer,
-        query: params.query,
-        offset: "",
+        bot, peer, query: params.query, offset: "",
       })
     );
 
@@ -140,10 +138,7 @@ execute: async (params, context) => {
 
     const index = params.index ?? 0;
     if (index >= results.results.length) {
-      return {
-        success: false,
-        error: `Only ${results.results.length} results available, index ${index} is out of range`,
-      };
+      return { success: false, error: `Only ${results.results.length} results, index ${index} out of range` };
     }
 
     const chosen = results.results[index];
@@ -174,7 +169,7 @@ execute: async (params, context) => {
 }
 ```
 
-#### WebApp auth pattern (for bots that need Telegram auth):
+#### WebApp auth pattern (Telegram-authenticated APIs)
 
 ```javascript
 let cachedAuth = null;
@@ -197,7 +192,7 @@ async function getAuth(bridge, botUsername, webAppUrl) {
 }
 ```
 
-### 3.2 — manifest.json
+### manifest.json
 
 ```json
 {
@@ -205,10 +200,7 @@ async function getAuth(bridge, botUsername, webAppUrl) {
   "name": "Display Name",
   "version": "1.0.0",
   "description": "One-line description",
-  "author": {
-    "name": "teleton",
-    "url": "https://github.com/TONresistor"
-  },
+  "author": { "name": "teleton", "url": "https://github.com/TONresistor" },
   "license": "MIT",
   "entry": "index.js",
   "teleton": ">=1.0.0",
@@ -222,7 +214,7 @@ async function getAuth(bridge, botUsername, webAppUrl) {
 }
 ```
 
-### 3.3 — README.md
+### README.md
 
 ```markdown
 # Plugin Name
@@ -235,15 +227,13 @@ One-line description.
 
 ## Install
 
-\`\`\`bash
 mkdir -p ~/.teleton/plugins
 cp -r plugins/PLUGIN_ID ~/.teleton/plugins/
-\`\`\`
 
 ## Usage examples
 
-- "Natural language prompt 1"
-- "Natural language prompt 2"
+- "Natural language prompt the user would say"
+- "Another example prompt"
 
 ## Tool schema
 
@@ -251,12 +241,12 @@ cp -r plugins/PLUGIN_ID ~/.teleton/plugins/
 
 | Param | Type | Required | Default | Description |
 |-------|------|----------|---------|-------------|
-| `param` | string | Yes | — | What it is |
+| `query` | string | Yes | — | Search query |
 ```
 
-### 3.4 — registry.json
+### registry.json
 
-Add a new entry to the `plugins` array in `registry.json`:
+Add to the `plugins` array:
 
 ```json
 {
@@ -271,61 +261,45 @@ Add a new entry to the `plugins` array in `registry.json`:
 
 ---
 
-## Step 4: Install and commit
+## Step 4 — Install and commit
 
-After creating all files:
-
-1. **Install**: `cp -r plugins/PLUGIN_ID ~/.teleton/plugins/`
-2. **Commit**: `git add plugins/PLUGIN_ID/ registry.json && git commit -m "PLUGIN_NAME: short description"`
-3. Ask user if they want to **push**.
+1. Copy: `cp -r plugins/PLUGIN_ID ~/.teleton/plugins/`
+2. Commit: `git add plugins/PLUGIN_ID/ registry.json && git commit -m "PLUGIN_NAME: short description"`
+3. Ask user if they want to push.
 
 ---
 
 ## Rules
 
 - **ESM only** — `export const tools`, never `module.exports`
-- **JS only** — loader reads `.js` files only
-- **Tool names** — snake_case, globally unique across all plugins
+- **JS only** — the plugin loader reads `.js` files only
+- **Tool names** — `snake_case`, globally unique across all plugins
 - **Defaults** — use `??` (nullish coalescing), never `||`
-- **Errors** — always wrap execute in try/catch, return `{ success: false, error }`
-- **Timeouts** — `AbortSignal.timeout(15000)` for all external API calls
-- **No dependencies** — use native `fetch`, no npm packages
-- **GramJS import** — always use `createRequire(realpathSync(process.argv[1]))` pattern
-- **Context chain** — `context.bridge.getClient().getClient()` for raw GramJS client
-- **Descriptions** — write tool descriptions for the LLM, be specific about what the tool does and when to use it
+- **Errors** — always try/catch in execute, return `{ success: false, error }`
+- **Timeouts** — `AbortSignal.timeout(15000)` on all external calls
+- **No npm deps** — use native `fetch`, no external packages
+- **GramJS** — always `createRequire(realpathSync(process.argv[1]))`, never `import from "telegram"`
+- **Client chain** — `context.bridge.getClient().getClient()` for raw GramJS client
 
-## Context object available to plugins
+## Context object
 
 | Field | Type | Description |
 |-------|------|-------------|
-| `bridge` | TelegramBridge | Send messages, reactions, media via Telegram |
-| `db` | Database | SQLite instance for persistence |
+| `bridge` | TelegramBridge | Send messages, reactions, media |
+| `db` | Database | SQLite for persistence |
 | `chatId` | string | Current chat ID |
-| `senderId` | number | Telegram user ID of who triggered the tool |
-| `isGroup` | boolean | `true` if group chat, `false` if DM |
-| `config` | Config? | Agent configuration (may be undefined) |
+| `senderId` | number | Telegram user ID of caller |
+| `isGroup` | boolean | `true` = group, `false` = DM |
+| `config` | Config? | Agent config (may be undefined) |
 
 ## Bridge methods
 
 ```javascript
-// Send message (with optional inline keyboard)
 await context.bridge.sendMessage({ chatId, text, replyToId?, inlineKeyboard? });
-
-// Send reaction
 await context.bridge.sendReaction(chatId, messageId, emoji);
-
-// Edit message
 await context.bridge.editMessage({ chatId, messageId, text, inlineKeyboard? });
-
-// Set typing indicator
 await context.bridge.setTyping(chatId);
-
-// Get messages
 const msgs = await context.bridge.getMessages(chatId, limit);
-
-// Get cached peer
 const peer = context.bridge.getPeer(chatId);
-
-// Get underlying client chain
 const gramjs = context.bridge.getClient().getClient();
 ```
