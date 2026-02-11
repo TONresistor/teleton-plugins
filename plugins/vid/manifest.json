@@ -1,7 +1,7 @@
 {
   "id": "vid",
   "name": "@vid — Inline YouTube Search",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Search and send YouTube videos via Telegram's @vid inline bot",
   "author": {
     "name": "teleton",
