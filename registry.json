@@ -72,6 +72,14 @@
       "author": "teleton",
       "tags": ["defi", "ton", "dex", "swap", "trading", "aggregator"],
       "path": "plugins/swapcoffee"
+    },
+    {
+      "id": "geckoterminal",
+      "name": "GeckoTerminal",
+      "description": "TON DEX pool and token data -- trending, new, and top pools, trades, OHLCV, token info, batch prices",
+      "author": "teleton",
+      "tags": ["market-data", "dex", "analytics", "ton", "trading", "defi"],
+      "path": "plugins/geckoterminal"
     }
   ]
 }
