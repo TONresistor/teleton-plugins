@@ -1,3 +1,5 @@
+<div align="center">
+
 # teleton-plugins
 
 [![MIT License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
@@ -5,7 +7,9 @@
 [![ESM only](https://img.shields.io/badge/ESM-only-yellow.svg)](#)
 [![Telegram](https://img.shields.io/badge/Telegram-bot-26A5E4.svg?logo=telegram)](https://t.me/teloton_bot)
 
-Community plugin directory for [Teleton](https://github.com/TONresistor/tonnet-ai) -- the Telegram AI agent on TON. Drop a plugin in `~/.teleton/plugins/` and it's live. No build step, no config.
+Community plugin directory for [Teleton](https://github.com/TONresistor/tonnet-ai) -- the Telegram AI agent on TON.<br>Drop a plugin in `~/.teleton/plugins/` and it's live. No build step, no config.
+
+</div>
 
 ## Table of Contents
 
@@ -14,6 +18,7 @@ Community plugin directory for [Teleton](https://github.com/TONresistor/tonnet-a
 - [Quick Start](#quick-start)
 - [Create a plugin](#create-a-plugin)
 - [Verify it works](#verify-it-works)
+- [Contributors](#contributors)
 - [License](#license)
 
 ## How it works
@@ -88,6 +93,12 @@ Plugin "my-plugin" failed to load: <error>    <- syntax error or crash
 ```
 
 If your plugin name shows up with tools registered, you're good.
+
+## Contributors
+
+<a href="https://github.com/TONresistor/teleton-plugins/graphs/contributors">
+  <img src="https://contrib.rocks/image?repo=TONresistor/teleton-plugins" />
+</a>
 
 ## License
 
