@@ -29,10 +29,15 @@ Teleton loads every `.js` file (or `folder/index.js`) from `~/.teleton/plugins/`
 ## Available Plugins
 
 | Plugin | Description | Tools |
-|--------|-------------|-------|
-| [example](plugins/example/) | Randomness toolkit -- dice roller and random picker | `dice_roll`, `random_pick` |
-| [giftstat](plugins/giftstat/) | Telegram gift market data from Giftstat API | `gift_collections`, `gift_floor_prices`, `gift_models`, +8 more |
-| [gaspump](plugins/gaspump/) | Token launcher for Gas111 on TON | `gas_login`, `gas_create_token`, `gas_token_info`, +5 more |
+|--------|-------------|------:|
+| [example](plugins/example/) | Randomness toolkit -- dice roller and random picker | 2 |
+| [deezer](plugins/deezer/) | Search and send music via @DeezerMusicBot inline bot | 1 |
+| [pic](plugins/pic/) | Search and send images via @pic inline bot (Yandex) | 1 |
+| [vid](plugins/vid/) | Search and send YouTube videos via @vid inline bot | 1 |
+| [giftstat](plugins/giftstat/) | Telegram gift market data from Giftstat API | 11 |
+| [giftindex](plugins/giftindex/) | GiftIndex ODROB trading -- monitor and trade Telegram Gifts index on TON | 6 |
+| [gaspump](plugins/gaspump/) | Launch, trade, and manage meme tokens on Gas111/TON | 13 |
+| [stormtrade](plugins/stormtrade/) | Perpetual futures trading on Storm Trade DEX -- crypto, stocks, forex, commodities | 13 |
 
 ## Quick Start
 
@@ -58,15 +63,17 @@ Short version:
 
 1. Fork this repo
 2. Create `plugins/your-plugin/index.js` -- export a `tools` array
-3. Add a `README.md` in your plugin folder
-4. Open a PR
+3. Add a `manifest.json` -- plugin metadata ([see format](CONTRIBUTING.md#manifestjson))
+4. Add a `README.md` in your plugin folder
+5. Open a PR
 
 Plugin folder structure:
 
 ```
 plugins/your-plugin/
-  index.js       # Required -- exports tools[]
-  README.md      # Required -- what it does, how to use it
+  index.js         # Required -- exports tools[]
+  manifest.json    # Required -- plugin metadata
+  README.md        # Required -- what it does, how to use it
 ```
 
 ## Verify it works

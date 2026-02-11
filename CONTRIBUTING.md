@@ -6,17 +6,64 @@ Plugins are single folders with an `index.js` that exports a `tools` array. Fork
 
 1. Fork this repo
 2. Create `plugins/your-plugin/index.js`
-3. Export a `tools` array (ESM — `export const tools`)
-4. Add a `README.md` in your plugin folder
-5. Open a PR
+3. Add a `manifest.json` in your plugin folder (see below)
+4. Export a `tools` array (ESM — `export const tools`)
+5. Add a `README.md` in your plugin folder
+6. Open a PR
 
 ## Plugin structure
 
 ```
 plugins/your-plugin/
-├── index.js       # exports tools[]
-└── README.md      # what it does, how to use it
+├── index.js         # Required — exports tools[]
+├── manifest.json    # Required — plugin metadata
+└── README.md        # Required — documentation
 ```
+
+## manifest.json
+
+Every plugin must include a `manifest.json` at the root of its folder. This file describes the plugin to the registry and to the teleton runtime.
+
+```json
+{
+  "id": "your-plugin",
+  "name": "Human-Readable Plugin Name",
+  "version": "1.0.0",
+  "description": "One-line description of what the plugin does",
+  "author": {
+    "name": "your-name",
+    "url": "https://github.com/your-name"
+  },
+  "license": "MIT",
+  "entry": "index.js",
+  "teleton": ">=1.0.0",
+  "tools": [
+    { "name": "tool_name", "description": "What the tool does" }
+  ],
+  "permissions": [],
+  "tags": ["category1", "category2"],
+  "repository": "https://github.com/TONresistor/teleton-plugins",
+  "funding": null
+}
+```
+
+### Field reference
+
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| `id` | string | **Yes** | Unique plugin identifier (lowercase, hyphens). Must match the folder name. |
+| `name` | string | **Yes** | Human-readable display name shown in the registry. |
+| `version` | string | **Yes** | Semver version string (e.g. `"1.0.0"`, `"2.3.1"`). |
+| `description` | string | **Yes** | One-line description of what the plugin does. |
+| `author` | object | **Yes** | Object with `name` (string) and `url` (string) fields. |
+| `license` | string | **Yes** | SPDX license identifier (e.g. `"MIT"`, `"Apache-2.0"`). |
+| `entry` | string | **Yes** | Entry point filename. Almost always `"index.js"`. |
+| `teleton` | string | **Yes** | Minimum teleton version required (semver range, e.g. `">=1.0.0"`). |
+| `tools` | array | **Yes** | Array of objects, each with `name` and `description` for every tool the plugin exports. |
+| `permissions` | array | **Yes** | Empty array `[]` by default. Add `"bridge"` if the plugin uses `context.bridge`. |
+| `tags` | array | No | Categories for discovery (e.g. `["defi", "ton", "trading"]`). |
+| `repository` | string | No | URL to the plugin's source repository. |
+| `funding` | string\|null | No | Funding URL or `null`. |
 
 ## Tool definition
 
@@ -77,11 +124,58 @@ Your `execute` function receives `(params, context)`. The context contains:
 | `isGroup` | boolean | `true` if group chat, `false` if DM |
 | `config` | Config? | Agent configuration (may be undefined) |
 
+## Best practices
+
+### Fetch timeouts
+
+Always use `AbortSignal.timeout()` on every `fetch()` call. This prevents tools from hanging indefinitely when an external API is slow or unreachable.
+
+```js
+const res = await fetch(url, { signal: AbortSignal.timeout(15000) });
+```
+
+### CJS dependencies
+
+The teleton runtime is ESM-only, but some Node.js packages (like `@ton/core`) only ship CommonJS. Use `createRequire` with `realpathSync` to load them:
+
+```js
+import { createRequire } from "node:module";
+import { realpathSync } from "node:fs";
+
+const _require = createRequire(realpathSync(process.argv[1]));
+const { Address } = _require("@ton/core");
+```
+
+### Bridge access
+
+When your plugin needs Telegram MTProto access via the bridge, declare `"permissions": ["bridge"]` in your `manifest.json` and access the GramJS client like this:
+
+```js
+const client = context.bridge.getClient().getClient();
+```
+
+### Error handling
+
+Always return the `{ success, data/error }` format. Slice long error messages to avoid flooding the LLM context:
+
+```js
+try {
+  const result = await doSomething(params);
+  return { success: true, data: result };
+} catch (err) {
+  return { success: false, error: String(err.message || err).slice(0, 500) };
+}
+```
+
 ## Rules
 
 - **ESM only** — use `export const tools`, not `module.exports`
 - **JS only at runtime** — the loader only reads `.js` files. Write TypeScript if you want, but compile to `.js` first
+- **`manifest.json` is required** — plugins without it won't be listed in the registry
 - Tool `name` must be globally unique — if it collides with a built-in or another plugin, yours is silently skipped
+- **Tool names must be prefixed** with the plugin name or a short unique prefix (e.g. `gas_`, `storm_`, `gift_`)
+- **Use `AbortSignal.timeout()`** on all `fetch()` calls — never let a network request hang without a timeout
+- **Declare `permissions: ["bridge"]`** in `manifest.json` if your plugin uses `context.bridge`
 - Your tools are available in both DMs and group chats (no scope filtering for plugins)
 
 ## Verify it works
