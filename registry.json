@@ -20,7 +20,7 @@
     {
       "id": "gaspump",
       "name": "Gas111 Token Launcher",
-      "description": "Launch and manage meme tokens on Gas111/TON",
+      "description": "Launch, trade, and manage meme tokens on Gas111/TON",
       "author": "teleton",
       "tags": ["token-launch", "ton", "meme-tokens", "trading", "api"],
       "path": "plugins/gaspump"
@@ -52,7 +52,7 @@
     {
       "id": "giftindex",
       "name": "GiftIndex ODROB Trading",
-      "description": "Monitor, analyze and trade the Telegram Gifts index on TON",
+      "description": "GiftIndex ODROB trading -- monitor, analyze and trade the Telegram Gifts index on TON",
       "author": "teleton",
       "tags": ["trading", "ton", "gifts", "defi"],
       "path": "plugins/giftindex"
@@ -68,10 +68,26 @@
     {
       "id": "swapcoffee",
       "name": "swap.coffee DEX Aggregator",
-      "description": "Swap tokens on TON via swap.coffee — best rates across all DEXes",
+      "description": "Swap tokens on TON via swap.coffee aggregator — best rates across all DEXes",
       "author": "teleton",
       "tags": ["defi", "ton", "dex", "swap", "trading", "aggregator"],
       "path": "plugins/swapcoffee"
+    },
+    {
+      "id": "dedust",
+      "name": "DeDust DEX",
+      "description": "Swap tokens, browse pools, and trade on DeDust — TON's #2 DEX",
+      "author": "teleton",
+      "tags": ["defi", "ton", "dex", "swap", "liquidity"],
+      "path": "plugins/dedust"
+    },
+    {
+      "id": "stonfi",
+      "name": "StonFi DEX",
+      "description": "Swap tokens, browse pools, and farm on StonFi DEX — the largest DEX on TON",
+      "author": "teleton",
+      "tags": ["defi", "ton", "dex", "swap", "liquidity", "farming"],
+      "path": "plugins/stonfi"
     },
     {
       "id": "geckoterminal",
@@ -88,6 +104,14 @@
       "author": "teleton",
       "tags": ["analytics", "ton", "market-data", "trust-score", "defi", "dex"],
       "path": "plugins/dyor"
+    },
+    {
+      "id": "tonapi",
+      "name": "TONAPI Explorer",
+      "description": "TON blockchain data from TONAPI -- accounts, jettons, NFTs, prices, transactions, traces, DNS, staking",
+      "author": "teleton",
+      "tags": ["blockchain", "ton", "explorer", "nft", "staking", "dns", "analytics"],
+      "path": "plugins/tonapi"
     },
     {
       "id": "evaa",
@@ -124,7 +148,7 @@
     {
       "id": "fragment",
       "name": "Fragment Marketplace",
-      "description": "Search and browse Telegram's NFT marketplace — usernames, numbers, collectible gifts, prices, auctions",
+      "description": "Search and browse Telegram's NFT marketplace — usernames, numbers, collectible gifts, auction history",
       "author": "teleton",
       "tags": ["marketplace", "telegram", "nft", "ton", "usernames", "collectibles"],
       "path": "plugins/fragment"
@@ -148,7 +172,7 @@
     {
       "id": "twitter",
       "name": "Twitter/X",
-      "description": "X/Twitter API v2 — read (search, lookup, trends) + write (post, like, retweet, follow) with OAuth 2.0 PKCE",
+      "description": "X/Twitter API v2 — read (search, lookup, trends) + write (post, like, retweet, follow) with OAuth 1.0a",
       "author": "teleton",
       "tags": ["social", "twitter", "x", "search", "trends"],
       "path": "plugins/twitter"
