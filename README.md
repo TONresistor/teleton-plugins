@@ -46,6 +46,7 @@ Teleton loads every `.js` file (or `folder/index.js`) from `~/.teleton/plugins/`
 | [swapcoffee](plugins/swapcoffee/) | Swap tokens on TON via swap.coffee -- best rates across all DEXes | 6 |
 | [geckoterminal](plugins/geckoterminal/) | TON DEX pool and token data -- trending, new, and top pools, trades, OHLCV, batch prices | 10 |
 | [dyor](plugins/dyor/) | TON token analytics from DYOR.io -- search, trust score, price, metrics, DEX trades, holders, pools | 11 |
+| [tonapi](plugins/tonapi/) | TON blockchain data from TONAPI -- accounts, jettons, NFTs, prices, transactions, traces, DNS, staking | 20 |
 
 ## Quick Start
 
