@@ -50,6 +50,9 @@ Teleton loads every `.js` file (or `folder/index.js`) from `~/.teleton/plugins/`
 | [dedust](plugins/dedust/) | DeDust DEX -- browse pools, search assets, view trades, prices, on-chain swaps | 8 |
 | [tonapi](plugins/tonapi/) | TON blockchain data from TONAPI -- accounts, jettons, NFTs, prices, transactions, traces, DNS, staking | 20 |
 | [evaa](plugins/evaa/) | Lending and borrowing on EVAA Protocol -- supply, borrow, withdraw, repay, liquidate | 11 |
+| [weather](plugins/weather/) | Current weather and 7-day forecast via Open-Meteo API | 2 |
+| [crypto-prices](plugins/crypto-prices/) | Real-time cryptocurrency prices and comparison for 5000+ coins | 2 |
+| [voice-notes](plugins/voice-notes/) | Transcribe voice messages using Telegram Premium speech-to-text | 1 |
 
 ## Quick Start
 

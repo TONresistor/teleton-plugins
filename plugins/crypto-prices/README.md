@@ -13,7 +13,7 @@ Real-time cryptocurrency prices and comparison via [CryptoCompare API](https://m
 
 ```bash
 mkdir -p ~/.teleton/plugins
-cp -r crypto-prices ~/.teleton/plugins/
+cp -r plugins/crypto-prices ~/.teleton/plugins/
 ```
 
 ## Usage

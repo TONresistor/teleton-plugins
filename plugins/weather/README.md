@@ -13,7 +13,7 @@ Current weather and 7-day forecast via Open-Meteo API — free, no API key requi
 
 ```bash
 mkdir -p ~/.teleton/plugins
-cp -r weather ~/.teleton/plugins/
+cp -r plugins/weather ~/.teleton/plugins/
 ```
 
 ## Usage

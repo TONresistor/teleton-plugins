@@ -11,7 +11,7 @@
   "entry": "index.js",
   "teleton": ">=1.0.0",
   "tools": [
-    { "name": "transcribe_voice", "description": "Transcribe a voice message or video note to text" }
+    { "name": "voice_transcribe", "description": "Transcribe a voice message or video note to text" }
   ],
   "permissions": ["bridge"],
   "tags": ["telegram", "voice", "transcription"],

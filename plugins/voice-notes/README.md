@@ -6,7 +6,7 @@ Transcribe voice messages and video notes using Telegram Premium built-in speech
 
 | Tool | Description |
 |------|-------------|
-| `transcribe_voice` | Transcribe a voice message or video note to text using Telegram Premium |
+| `voice_transcribe` | Transcribe a voice message or video note to text using Telegram Premium |
 
 ## Requirements
 
@@ -16,13 +16,13 @@ Transcribe voice messages and video notes using Telegram Premium built-in speech
 
 ```bash
 mkdir -p ~/.teleton/plugins
-cp -r voice-notes ~/.teleton/plugins/
+cp -r plugins/voice-notes ~/.teleton/plugins/
 ```
 
 Add to your `IDENTITY.md`:
 
 ```
-When you see [🎤 voice msg_id=...] or [🎬 video_note msg_id=...], ALWAYS call `transcribe_voice` with the message_id to read what the user said.
+When you see [🎤 voice msg_id=...] or [🎬 video_note msg_id=...], ALWAYS call `voice_transcribe` with the message_id to read what the user said.
 ```
 
 ## Usage
@@ -35,7 +35,7 @@ The agent automatically transcribes the audio and responds to the content.
 
 ## Schemas
 
-### transcribe_voice
+### voice_transcribe
 
 | Param | Type | Required | Default | Description |
 |-------|------|----------|---------|-------------|

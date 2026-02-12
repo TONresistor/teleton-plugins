@@ -39,7 +39,7 @@ const POPULAR = {
 
 function resolveSymbol(input) {
   const lower = input.toLowerCase().trim();
-  return POPULAR[lower] || input.toUpperCase();
+  return POPULAR[lower] ?? input.toUpperCase();
 }
 
 export const tools = [
@@ -97,10 +97,10 @@ export const tools = [
             volume_24h: `$${(usd.TOTALVOLUME24HTO / 1e9).toFixed(2)}B`,
           },
         };
-      } catch (error) {
+      } catch (err) {
         return {
           success: false,
-          error: error instanceof Error ? error.message : String(error),
+          error: String(err.message || err).slice(0, 500),
         };
       }
     },
@@ -153,10 +153,10 @@ export const tools = [
         }
 
         return { success: true, data: { coins: results } };
-      } catch (error) {
+      } catch (err) {
         return {
           success: false,
-          error: error instanceof Error ? error.message : String(error),
+          error: String(err.message || err).slice(0, 500),
         };
       }
     },

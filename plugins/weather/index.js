@@ -84,10 +84,10 @@ export const tools = [
             pressure: `${Math.round(c.surface_pressure)} hPa`,
           },
         };
-      } catch (error) {
+      } catch (err) {
         return {
           success: false,
-          error: error instanceof Error ? error.message : String(error),
+          error: String(err.message || err).slice(0, 500),
         };
       }
     },
@@ -138,10 +138,10 @@ export const tools = [
             forecast,
           },
         };
-      } catch (error) {
+      } catch (err) {
         return {
           success: false,
-          error: error instanceof Error ? error.message : String(error),
+          error: String(err.message || err).slice(0, 500),
         };
       }
     },

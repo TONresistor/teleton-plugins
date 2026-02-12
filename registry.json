@@ -96,6 +96,30 @@
       "author": "teleton",
       "tags": ["defi", "ton", "lending", "borrowing", "liquidation"],
       "path": "plugins/evaa"
+    },
+    {
+      "id": "weather",
+      "name": "Weather Forecast",
+      "description": "Current weather and 7-day forecast via Open-Meteo API",
+      "author": "walged",
+      "tags": ["weather", "utility"],
+      "path": "plugins/weather"
+    },
+    {
+      "id": "crypto-prices",
+      "name": "Crypto Prices",
+      "description": "Real-time cryptocurrency prices and comparison via CryptoCompare API",
+      "author": "walged",
+      "tags": ["crypto", "prices", "utility"],
+      "path": "plugins/crypto-prices"
+    },
+    {
+      "id": "voice-notes",
+      "name": "Voice Notes Transcription",
+      "description": "Transcribe voice messages using Telegram Premium speech-to-text",
+      "author": "walged",
+      "tags": ["telegram", "voice", "transcription"],
+      "path": "plugins/voice-notes"
     }
   ]
 }

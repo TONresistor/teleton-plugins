@@ -10,7 +10,7 @@ function sleep(ms) {
 
 export const tools = [
   {
-    name: "transcribe_voice",
+    name: "voice_transcribe",
     description:
       "Transcribe a voice message or video note using Telegram Premium speech-to-text. " +
       "ALWAYS use this when you see [🎤 voice msg_id=...] or [🎬 video_note msg_id=...]. " +
@@ -86,8 +86,8 @@ export const tools = [
           success: false,
           error: "Transcription returned empty result. The message may not contain audio.",
         };
-      } catch (error) {
-        const msg = error instanceof Error ? error.message : String(error);
+      } catch (err) {
+        const msg = String(err.message || err).slice(0, 500);
 
         if (msg.includes("PREMIUM_ACCOUNT_REQUIRED")) {
           return {
