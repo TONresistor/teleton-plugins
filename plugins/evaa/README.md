@@ -32,7 +32,13 @@ mkdir -p ~/.teleton/plugins
 cp -r plugins/evaa ~/.teleton/plugins/
 ```
 
-Requires `@evaafi/sdk` installed in the teleton runtime's `node_modules/`.
+Requires `@evaafi/sdk` and `crypto-js` installed in the teleton runtime's `node_modules/`:
+
+```bash
+cd /path/to/tonnet-ai && npm install @evaafi/sdk crypto-js --legacy-peer-deps
+```
+
+> **Note:** `crypto-js` is an undeclared dependency of `@evaafi/sdk` — it must be installed manually.
 
 ## Usage examples
 

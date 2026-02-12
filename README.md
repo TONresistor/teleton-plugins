@@ -54,6 +54,8 @@ Teleton loads every `.js` file (or `folder/index.js`) from `~/.teleton/plugins/`
 | [crypto-prices](plugins/crypto-prices/) | Real-time cryptocurrency prices and comparison for 5000+ coins | 2 |
 | [voice-notes](plugins/voice-notes/) | Transcribe voice messages using Telegram Premium speech-to-text | 1 |
 | [fragment](plugins/fragment/) | Fragment marketplace -- search usernames, numbers, collectible gifts, auctions, prices | 6 |
+| [sbt](plugins/sbt/) | Deploy and mint Soulbound Tokens (TEP-85) on TON | 2 |
+| [multisend](plugins/multisend/) | Batch send TON and jettons to up to 254 recipients in a single transaction | 5 |
 
 ## Quick Start
 
