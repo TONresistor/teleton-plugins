@@ -1,6 +1,6 @@
 # twitter
 
-X/Twitter API v2 — read (search, lookup, trends) + write (post, like, retweet, follow) with OAuth 2.0 PKCE.
+X/Twitter API v2 — read (search, lookup, trends) + write (post, like, retweet, follow) with OAuth 1.0a.
 
 ## Tools
 

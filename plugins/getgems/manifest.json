@@ -1,0 +1,30 @@
+{
+  "id": "getgems",
+  "name": "Getgems NFT Marketplace",
+  "version": "1.0.0",
+  "description": "Browse, search, and trade NFTs on Getgems — TON's largest NFT marketplace",
+  "author": { "name": "teleton", "url": "https://github.com/TONresistor" },
+  "license": "MIT",
+  "entry": "index.js",
+  "teleton": ">=1.0.0",
+  "tools": [
+    { "name": "getgems_top_collections", "description": "Get top NFT collections by volume" },
+    { "name": "getgems_collection_info", "description": "Get collection details with social links" },
+    { "name": "getgems_collection_stats", "description": "Get collection floor price, volume, and holder stats" },
+    { "name": "getgems_collection_attributes", "description": "Get traits with rarity and floor prices per trait" },
+    { "name": "getgems_collection_history", "description": "Get collection activity — sales, transfers, mints, listings" },
+    { "name": "getgems_nft_info", "description": "Get full NFT details — owner, sale data, attributes, image" },
+    { "name": "getgems_nft_history", "description": "Get NFT trade and transfer history" },
+    { "name": "getgems_nfts_on_sale", "description": "Get NFTs currently listed for sale in a collection" },
+    { "name": "getgems_nft_offers", "description": "Get active offers on a specific NFT" },
+    { "name": "getgems_owner_nfts", "description": "Get all NFTs owned by a wallet address" },
+    { "name": "getgems_user_trading", "description": "Get user trading statistics" },
+    { "name": "getgems_gift_collections", "description": "List Telegram Gift NFT collections" },
+    { "name": "getgems_buy_nft", "description": "Buy an NFT listed for sale from the agent wallet" },
+    { "name": "getgems_list_nft", "description": "List an NFT for fixed-price sale from the agent wallet" }
+  ],
+  "permissions": [],
+  "tags": ["nft", "ton", "marketplace", "trading", "collectibles", "gifts"],
+  "repository": "https://github.com/TONresistor/teleton-plugins",
+  "funding": null
+}

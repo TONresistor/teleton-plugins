@@ -3,8 +3,8 @@
 # teleton-plugins
 
 [![GitHub stars](https://img.shields.io/github/stars/TONresistor/teleton-plugins?style=flat&logo=github)](https://github.com/TONresistor/teleton-plugins/stargazers)
-[![Plugins](https://img.shields.io/badge/plugins-22-8B5CF6.svg)](#-available-plugins)
-[![Tools](https://img.shields.io/badge/tools-164-E040FB.svg)](#-available-plugins)
+[![Plugins](https://img.shields.io/badge/plugins-23-8B5CF6.svg)](#-available-plugins)
+[![Tools](https://img.shields.io/badge/tools-178-E040FB.svg)](#-available-plugins)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](CONTRIBUTING.md)
 [![Telegram](https://img.shields.io/badge/Telegram-community-26A5E4.svg?logo=telegram)](https://t.me/ResistanceForum)
@@ -64,7 +64,7 @@ No build step. No npm install. Just copy and go.
 
 ## Available Plugins
 
-> **22 plugins** · **164 tools** · [Browse the registry](registry.json)
+> **23 plugins** · **178 tools** · [Browse the registry](registry.json)
 
 ### DeFi & Trading
 
@@ -94,6 +94,7 @@ No build step. No npm install. Just copy and go.
 |--------|-------------|:-----:|--------|
 | [twitter](plugins/twitter/) | X/Twitter API v2 — search, post, like, retweet, follow | 24 | teleton |
 | [fragment](plugins/fragment/) | Fragment marketplace — usernames, numbers, collectible gifts | 6 | teleton |
+| [getgems](plugins/getgems/) | Getgems NFT marketplace — browse collections, trade NFTs, view offers, Telegram gifts | 14 | teleton |
 | [pic](plugins/pic/) | Image search via @pic inline bot | 1 | teleton |
 | [vid](plugins/vid/) | YouTube search via @vid inline bot | 1 | teleton |
 | [deezer](plugins/deezer/) | Music search via @DeezerMusicBot | 1 | teleton |

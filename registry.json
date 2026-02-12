@@ -176,6 +176,14 @@
       "author": "teleton",
       "tags": ["social", "twitter", "x", "search", "trends"],
       "path": "plugins/twitter"
+    },
+    {
+      "id": "getgems",
+      "name": "Getgems NFT Marketplace",
+      "description": "Browse, search, and trade NFTs on Getgems — TON's largest NFT marketplace",
+      "author": "teleton",
+      "tags": ["nft", "ton", "marketplace", "trading", "collectibles"],
+      "path": "plugins/getgems"
     }
   ]
 }
