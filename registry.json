@@ -138,12 +138,12 @@
       "path": "plugins/sbt"
     },
     {
-      "id": "highload",
-      "name": "Highload Wallet v3",
+      "id": "multisend",
+      "name": "Multisend",
       "description": "Batch send TON and jettons to up to 254 recipients in a single transaction",
       "author": "teleton",
       "tags": ["batch", "ton", "airdrop", "wallet", "transfer"],
-      "path": "plugins/highload"
+      "path": "plugins/multisend"
     },
     {
       "id": "twitter",
