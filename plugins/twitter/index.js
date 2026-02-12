@@ -2,15 +2,15 @@
  * Twitter/X plugin — X API v2 read + write
  *
  * Read: Bearer token (post lookup, search, user info, timelines, trends)
- * Write: OAuth 2.0 PKCE (post, like, retweet, follow, bookmark)
+ * Write: OAuth 1.0a HMAC-SHA1 (post, like, retweet, follow, bookmark)
  *
- * Auth configured via twitter_auth tool (admin DM only).
+ * Auth configured via twitter_auth / twitter_oauth tools (admin DM only).
  */
 
 import { readFileSync, writeFileSync, mkdirSync, existsSync } from "fs";
 import { join } from "path";
 import { homedir } from "os";
-import { createHash, randomBytes } from "node:crypto";
+import { createHmac, randomBytes } from "node:crypto";
 
 // ---------------------------------------------------------------------------
 // Auth storage
@@ -48,96 +48,78 @@ function loadBearerToken() {
 }
 
 // ---------------------------------------------------------------------------
-// OAuth 2.0 PKCE helpers
+// OAuth 1.0a HMAC-SHA1 signing
 // ---------------------------------------------------------------------------
 
-const OAUTH_SCOPES = "tweet.read tweet.write users.read like.read like.write follows.read follows.write bookmark.read bookmark.write offline.access";
-
-function generatePKCE() {
-  const verifier = randomBytes(32).toString("base64url");
-  const challenge = createHash("sha256").update(verifier).digest("base64url");
-  return { verifier, challenge };
+function percentEncode(str) {
+  return encodeURIComponent(String(str))
+    .replace(/!/g, "%21")
+    .replace(/\*/g, "%2A")
+    .replace(/'/g, "%27")
+    .replace(/\(/g, "%28")
+    .replace(/\)/g, "%29");
 }
 
-function buildOAuthURL(clientId, redirectUri, state, codeChallenge) {
-  const url = new URL("https://x.com/i/oauth2/authorize");
-  url.searchParams.set("response_type", "code");
-  url.searchParams.set("client_id", clientId);
-  url.searchParams.set("redirect_uri", redirectUri);
-  url.searchParams.set("scope", OAUTH_SCOPES);
-  url.searchParams.set("state", state);
-  url.searchParams.set("code_challenge", codeChallenge);
-  url.searchParams.set("code_challenge_method", "S256");
-  return url.toString();
-}
-
-async function exchangeCode(code, auth) {
-  const body = new URLSearchParams({
-    grant_type: "authorization_code",
-    code,
-    client_id: auth.client_id,
-    redirect_uri: auth.redirect_uri,
-    code_verifier: auth.code_verifier,
-  });
-  const headers = { "Content-Type": "application/x-www-form-urlencoded" };
-  if (auth.client_secret) {
-    headers.Authorization = "Basic " + Buffer.from(`${auth.client_id}:${auth.client_secret}`).toString("base64");
-  }
-  const res = await fetch("https://api.x.com/2/oauth2/token", {
-    method: "POST", headers, body: body.toString(),
-    signal: AbortSignal.timeout(15000),
-  });
-  if (!res.ok) {
-    const text = await res.text().catch(() => "");
-    throw new Error(`OAuth token exchange failed (${res.status}): ${text.slice(0, 300)}`);
-  }
-  return res.json();
-}
-
-async function refreshAccessToken(auth) {
-  if (!auth.oauth?.refresh_token) throw new Error("No refresh token available. Re-authenticate with twitter_auth.");
-  const body = new URLSearchParams({
-    grant_type: "refresh_token",
-    refresh_token: auth.oauth.refresh_token,
-    client_id: auth.client_id,
-  });
-  const headers = { "Content-Type": "application/x-www-form-urlencoded" };
-  if (auth.client_secret) {
-    headers.Authorization = "Basic " + Buffer.from(`${auth.client_id}:${auth.client_secret}`).toString("base64");
-  }
-  const res = await fetch("https://api.x.com/2/oauth2/token", {
-    method: "POST", headers, body: body.toString(),
-    signal: AbortSignal.timeout(15000),
-  });
-  if (!res.ok) {
-    const text = await res.text().catch(() => "");
-    throw new Error(`OAuth refresh failed (${res.status}): ${text.slice(0, 200)}. Re-authenticate with twitter_auth.`);
-  }
-  const tokens = await res.json();
-  const oauth = {
-    access_token: tokens.access_token,
-    refresh_token: tokens.refresh_token ?? auth.oauth.refresh_token,
-    expires_at: Date.now() + (tokens.expires_in ?? 7200) * 1000,
-    scope: tokens.scope ?? auth.oauth.scope,
+function buildOAuth1Header(method, url, queryParams, creds) {
+  const oauthParams = {
+    oauth_consumer_key: creds.consumer_key,
+    oauth_token: creds.access_token,
+    oauth_signature_method: "HMAC-SHA1",
+    oauth_timestamp: Math.floor(Date.now() / 1000).toString(),
+    oauth_nonce: randomBytes(16).toString("hex"),
+    oauth_version: "1.0",
   };
-  saveAuth({ oauth });
-  return oauth.access_token;
+
+  // Combine oauth params + query params for signature base (NOT JSON body)
+  const allParams = { ...oauthParams };
+  for (const [k, v] of Object.entries(queryParams)) {
+    allParams[k] = v;
+  }
+
+  // Sort by key, then build parameter string
+  const paramString = Object.keys(allParams)
+    .sort()
+    .map((k) => `${percentEncode(k)}=${percentEncode(allParams[k])}`)
+    .join("&");
+
+  // Signature base string: METHOD&url&params
+  const baseUrl = url.split("?")[0];
+  const signatureBase = `${method.toUpperCase()}&${percentEncode(baseUrl)}&${percentEncode(paramString)}`;
+
+  // Signing key: consumer_secret&token_secret
+  const signingKey = `${percentEncode(creds.consumer_secret)}&${percentEncode(creds.access_token_secret)}`;
+
+  // HMAC-SHA1
+  const signature = createHmac("sha1", signingKey).update(signatureBase).digest("base64");
+  oauthParams.oauth_signature = signature;
+
+  // Build Authorization header
+  const header = Object.keys(oauthParams)
+    .sort()
+    .map((k) => `${percentEncode(k)}="${percentEncode(oauthParams[k])}"`)
+    .join(", ");
+
+  return `OAuth ${header}`;
 }
 
-async function getOAuthToken() {
+function loadOAuth1Creds() {
   const auth = loadAuth();
-  if (!auth.oauth?.access_token) {
-    throw new Error("OAuth not configured. Use twitter_auth to set up write access (admin DM only). You need a Client ID from https://developer.x.com — app settings > OAuth 2.0.");
+  if (!auth.consumer_key || !auth.consumer_secret || !auth.access_token || !auth.access_token_secret) {
+    throw new Error(
+      "OAuth not configured. Use twitter_oauth (admin DM only) to provide your Consumer Key, Consumer Secret, Access Token, and Access Token Secret from https://developer.x.com."
+    );
   }
-  if (auth.oauth.expires_at && Date.now() > auth.oauth.expires_at - 60000) {
-    return refreshAccessToken(auth);
-  }
-  return auth.oauth.access_token;
+  return {
+    consumer_key: auth.consumer_key,
+    consumer_secret: auth.consumer_secret,
+    access_token: auth.access_token,
+    access_token_secret: auth.access_token_secret,
+  };
 }
 
 function getAuthenticatedUserId() {
   const auth = loadAuth();
-  if (!auth.user_id) throw new Error("OAuth not configured. Use twitter_auth first.");
+  if (!auth.user_id) throw new Error("OAuth not configured or user ID unknown. Use twitter_oauth first.");
   return auth.user_id;
 }
 
@@ -170,15 +152,20 @@ async function xFetch(path, params = {}) {
 }
 
 async function xFetchOAuth(method, path, body = null) {
-  const token = await getOAuthToken();
-  const url = new URL(path, API_BASE);
+  const creds = loadOAuth1Creds();
+  const fullUrl = new URL(path, API_BASE).toString();
+  const authHeader = buildOAuth1Header(method, fullUrl, {}, creds);
   const opts = {
     method,
-    headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+    headers: {
+      Authorization: authHeader,
+      "Content-Type": "application/json",
+      Accept: "application/json",
+    },
     signal: AbortSignal.timeout(15000),
   };
   if (body) opts.body = JSON.stringify(body);
-  const res = await fetch(url, opts);
+  const res = await fetch(fullUrl, opts);
   if (res.status === 204) return {};
   if (!res.ok) {
     const text = await res.text().catch(() => "");
@@ -224,153 +211,138 @@ function formatUser(u) {
 }
 
 // ---------------------------------------------------------------------------
-// Auth tool
+// Auth tools
 // ---------------------------------------------------------------------------
 
 const twitterAuth = {
   name: "twitter_auth",
   description:
-    `Configure Twitter/X API authentication (admin only, DM only). Two levels:\n` +
-    `\n` +
-    `1) BEARER TOKEN (read-only tools): provide bearer_token. ` +
-    `If the user hasn't provided it, ask them to go to https://developer.x.com, ` +
-    `create a project/app, go to "Keys and tokens" and copy the Bearer Token (starts with "AAAA...").\n` +
-    `\n` +
-    `2) OAUTH (write tools — post, like, retweet, follow): provide client_id (and client_secret if confidential app). ` +
-    `If the user hasn't provided these, ask them to go to https://developer.x.com, ` +
-    `open their app settings, go to "User authentication settings", enable OAuth 2.0, ` +
-    `set type to "Web App" (confidential) or "Native App" (public), ` +
-    `set redirect URL to "https://example.com/callback", ` +
-    `then copy Client ID (and Client Secret if Web App). ` +
-    `The tool will generate an authorization link. After the user clicks it and authorizes, ` +
-    `they'll be redirected to a page — they must copy the "code" value from the URL and provide it as oauth_code.\n` +
-    `\n` +
-    `Steps: 1) call with client_id → get auth link, 2) user clicks + copies code, 3) call with oauth_code → done.`,
+    `Configure Twitter/X API Bearer Token for read-only access (admin only, DM only). ` +
+    `If the user has not provided their bearer_token, ask them to: ` +
+    `1) Go to https://developer.x.com and open their app, ` +
+    `2) Go to "Keys and tokens" and copy the Bearer Token (starts with "AAAA..."), ` +
+    `3) Paste it here in DM. ` +
+    `This only enables read tools. For write access (post, like, retweet, follow), use twitter_oauth instead.`,
   parameters: {
     type: "object",
     properties: {
       bearer_token: {
         type: "string",
-        description: "Bearer Token for read-only access (starts with AAAA...)",
-      },
-      client_id: {
-        type: "string",
-        description: "OAuth 2.0 Client ID from X Developer Portal app settings",
-      },
-      client_secret: {
-        type: "string",
-        description: "OAuth 2.0 Client Secret (only for confidential/Web App type, omit for public/Native App)",
-      },
-      redirect_uri: {
-        type: "string",
-        description: "OAuth redirect URI (default: https://example.com/callback — must match app settings)",
-      },
-      oauth_code: {
-        type: "string",
-        description: "Authorization code from the redirect URL after user authorizes (the 'code' parameter)",
+        description: "Bearer Token from X Developer Portal (long string starting with AAAA...)",
       },
     },
+    required: ["bearer_token"],
   },
   execute: async (params, context) => {
     try {
       const adminIds = context.config?.telegram?.admin_ids ?? [];
       if (!adminIds.includes(context.senderId)) {
-        return { success: false, error: "Admin only. You are not authorized to configure Twitter." };
+        return { success: false, error: "Admin only." };
       }
       if (context.isGroup) {
-        return { success: false, error: "DM only. Send this in a private message, not in a group." };
+        return { success: false, error: "DM only." };
+      }
+      const url = new URL("/2/tweets/search/recent", API_BASE);
+      url.searchParams.set("query", "test");
+      url.searchParams.set("max_results", "10");
+      const res = await fetch(url, {
+        headers: { Authorization: `Bearer ${params.bearer_token}`, Accept: "application/json" },
+        signal: AbortSignal.timeout(10000),
+      });
+      if (!res.ok) {
+        const text = await res.text().catch(() => "");
+        return { success: false, error: `Invalid Bearer Token — X API returned ${res.status}: ${text.slice(0, 200)}` };
+      }
+      saveAuth({ bearer_token: params.bearer_token });
+      return { success: true, data: { message: "Bearer Token saved. Read tools are active. For write access, use twitter_oauth." } };
+    } catch (err) {
+      return { success: false, error: err.message };
+    }
+  },
+};
+
+const twitterOAuth = {
+  name: "twitter_oauth",
+  description:
+    `Set up OAuth 1.0a for Twitter/X write access — post, like, retweet, follow, bookmark (admin only, DM only). ` +
+    `Requires 4 keys from https://developer.x.com → app → "Keys and tokens" → OAuth 1.0 section:\n` +
+    `- consumer_key: the "Consumer Key" (aka API Key)\n` +
+    `- consumer_secret: the "Consumer Secret" (aka API Key Secret) — click "Show" or "Regenerate" to reveal\n` +
+    `- access_token: the "Access Token" (should say "Read and write")\n` +
+    `- access_token_secret: the "Access Token Secret" — shown when generating/regenerating the Access Token\n` +
+    `\n` +
+    `If the user hasn't provided all 4 values, ask them to go to https://developer.x.com, ` +
+    `open their app, go to "Keys and tokens", and copy all 4 values from the OAuth 1.0 section. ` +
+    `The Consumer Secret and Access Token Secret may need to be regenerated to be visible again. ` +
+    `No redirect flow needed — just paste the 4 keys and it's done.`,
+  parameters: {
+    type: "object",
+    properties: {
+      consumer_key: {
+        type: "string",
+        description: "Consumer Key (API Key) from OAuth 1.0 Keys section",
+      },
+      consumer_secret: {
+        type: "string",
+        description: "Consumer Secret (API Key Secret) — click Show or Regenerate to reveal",
+      },
+      access_token: {
+        type: "string",
+        description: "Access Token (should say 'Read and write')",
+      },
+      access_token_secret: {
+        type: "string",
+        description: "Access Token Secret — shown when generating the Access Token",
+      },
+    },
+    required: ["consumer_key", "consumer_secret", "access_token", "access_token_secret"],
+  },
+  execute: async (params, context) => {
+    try {
+      const adminIds = context.config?.telegram?.admin_ids ?? [];
+      if (!adminIds.includes(context.senderId)) {
+        return { success: false, error: "Admin only." };
+      }
+      if (context.isGroup) {
+        return { success: false, error: "DM only." };
       }
 
-      // --- Bearer token setup ---
-      if (params.bearer_token) {
-        const url = new URL("/2/tweets/search/recent", API_BASE);
-        url.searchParams.set("query", "test");
-        url.searchParams.set("max_results", "10");
-        const res = await fetch(url, {
-          headers: { Authorization: `Bearer ${params.bearer_token}`, Accept: "application/json" },
-          signal: AbortSignal.timeout(10000),
-        });
-        if (!res.ok) {
-          const text = await res.text().catch(() => "");
-          return { success: false, error: `Invalid Bearer Token — X API returned ${res.status}: ${text.slice(0, 200)}` };
-        }
-        saveAuth({ bearer_token: params.bearer_token });
-        return { success: true, data: { message: "Bearer Token configured. Read-only tools (search, lookup, trends) are now active." } };
+      // Validate by calling /2/users/me with OAuth 1.0a
+      const creds = {
+        consumer_key: params.consumer_key,
+        consumer_secret: params.consumer_secret,
+        access_token: params.access_token,
+        access_token_secret: params.access_token_secret,
+      };
+      const meUrl = `${API_BASE}/2/users/me`;
+      const authHeader = buildOAuth1Header("GET", meUrl, { "user.fields": USER_FIELDS }, creds);
+      const res = await fetch(`${meUrl}?user.fields=${encodeURIComponent(USER_FIELDS)}`, {
+        headers: { Authorization: authHeader, Accept: "application/json" },
+        signal: AbortSignal.timeout(10000),
+      });
+      if (!res.ok) {
+        const text = await res.text().catch(() => "");
+        return { success: false, error: `Invalid OAuth credentials — X API returned ${res.status}: ${text.slice(0, 300)}` };
       }
+      const me = await res.json();
+      const userId = me.data?.id ?? null;
+      const username = me.data?.username ?? null;
 
-      // --- OAuth step 1: start flow ---
-      if (params.client_id) {
-        const redirectUri = params.redirect_uri ?? "https://example.com/callback";
-        const { verifier, challenge } = generatePKCE();
-        const state = randomBytes(16).toString("hex");
-        const oauthUrl = buildOAuthURL(params.client_id, redirectUri, state, challenge);
-        saveAuth({
-          client_id: params.client_id,
-          client_secret: params.client_secret ?? null,
-          redirect_uri: redirectUri,
-          code_verifier: verifier,
-          oauth_state: state,
-        });
-        return {
-          success: true,
-          data: {
-            message: "Click the link below to authorize Twitter access. After authorizing, you'll be redirected — copy the 'code' value from the URL bar and paste it here.",
-            oauth_url: oauthUrl,
-            redirect_uri: redirectUri,
-            note: "The redirect page may show an error — that's normal. Just copy the 'code=XXXXX' value from the URL.",
-          },
-        };
-      }
+      saveAuth({
+        consumer_key: params.consumer_key,
+        consumer_secret: params.consumer_secret,
+        access_token: params.access_token,
+        access_token_secret: params.access_token_secret,
+        user_id: userId,
+        username,
+      });
 
-      // --- OAuth step 2: exchange code ---
-      if (params.oauth_code) {
-        const auth = loadAuth();
-        if (!auth.client_id || !auth.code_verifier) {
-          return { success: false, error: "No pending OAuth flow. Start by providing your client_id first." };
-        }
-        const tokens = await exchangeCode(params.oauth_code, auth);
-        // Get authenticated user ID
-        const meRes = await fetch("https://api.x.com/2/users/me", {
-          headers: { Authorization: `Bearer ${tokens.access_token}` },
-          signal: AbortSignal.timeout(10000),
-        });
-        let userId = null;
-        let username = null;
-        if (meRes.ok) {
-          const me = await meRes.json();
-          userId = me.data?.id ?? null;
-          username = me.data?.username ?? null;
-        }
-        saveAuth({
-          oauth: {
-            access_token: tokens.access_token,
-            refresh_token: tokens.refresh_token ?? null,
-            expires_at: Date.now() + (tokens.expires_in ?? 7200) * 1000,
-            scope: tokens.scope ?? null,
-          },
-          user_id: userId,
-          username,
-          code_verifier: null,
-          oauth_state: null,
-        });
-        return {
-          success: true,
-          data: {
-            message: `OAuth configured for @${username ?? "unknown"}. Write tools (post, like, retweet, follow, bookmark) are now active.`,
-            user_id: userId,
-            username,
-          },
-        };
-      }
-
-      // --- No params: return instructions ---
       return {
         success: true,
         data: {
-          message: "Twitter auth requires setup. Ask the user for their credentials.",
-          read_access: "Provide bearer_token for read-only tools (search, lookup, user info, trends).",
-          write_access: "Provide client_id (+ client_secret for Web App type) for write tools (post, like, retweet, follow).",
-          how_to_get: "Go to https://developer.x.com → create project/app → Keys and tokens → copy Bearer Token. For OAuth: app settings → User authentication → enable OAuth 2.0 → copy Client ID.",
+          message: `OAuth configured for @${username ?? "unknown"}. All write tools (post, like, retweet, follow, bookmark) are now active.`,
+          user_id: userId,
+          username,
         },
       };
     } catch (err) {
@@ -758,12 +730,12 @@ const twitterTrends = {
 };
 
 // ---------------------------------------------------------------------------
-// Write tools (OAuth required)
+// Write tools (OAuth 1.0a required)
 // ---------------------------------------------------------------------------
 
 const twitterPostCreate = {
   name: "twitter_post_create",
-  description: "Post a new tweet on X/Twitter. Requires OAuth (set up via twitter_auth). Can create replies and quote tweets.",
+  description: "Post a new tweet on X/Twitter. Requires OAuth (set up via twitter_oauth). Can create replies and quote tweets.",
   parameters: {
     type: "object",
     properties: {
@@ -939,6 +911,7 @@ const twitterBookmark = {
 export const tools = [
   // Auth
   twitterAuth,
+  twitterOAuth,
   // Read — Posts
   twitterPostLookup,
   twitterSearchRecent,
@@ -959,7 +932,7 @@ export const tools = [
   twitterQuotePosts,
   // Read — Trends
   twitterTrends,
-  // Write (OAuth)
+  // Write (OAuth 1.0a)
   twitterPostCreate,
   twitterPostDelete,
   twitterLike,
