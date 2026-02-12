@@ -583,13 +583,12 @@ const dedustJettonInfo = {
       return {
         success: true,
         data: {
-          metadata: {
-            name: metadata?.name ?? null,
-            symbol: metadata?.symbol ?? null,
-            decimals,
-            image: metadata?.image ?? null,
-            description: metadata?.description ?? null,
-          },
+          address: addr,
+          name: metadata?.name ?? null,
+          symbol: metadata?.symbol ?? null,
+          decimals,
+          image: metadata?.image ?? null,
+          description: metadata?.description ?? null,
           top_holders: topHolders,
           top_traders: traders,
         },
@@ -792,8 +791,9 @@ const dedustSwapEstimate = {
           ),
           trade_fee: formatAmount(
             estimate.tradeFee.toString(),
-            outputDecimals
+            inputDecimals
           ),
+          trade_fee_token: params.input_token,
           pool_address: pool.address.toString(),
         },
       };
