@@ -130,12 +130,12 @@
       "path": "plugins/fragment"
     },
     {
-      "id": "assets",
-      "name": "TON Assets",
+      "id": "sbt",
+      "name": "TON SBT",
       "description": "Deploy and mint Soulbound Tokens (TEP-85) on TON",
       "author": "teleton",
-      "tags": ["ton", "nft", "sbt", "assets"],
-      "path": "plugins/assets"
+      "tags": ["ton", "nft", "sbt"],
+      "path": "plugins/sbt"
     },
     {
       "id": "highload",
@@ -148,7 +148,7 @@
     {
       "id": "twitter",
       "name": "Twitter/X",
-      "description": "Read-only access to X/Twitter API v2 — posts, users, search, timelines, trends",
+      "description": "X/Twitter API v2 — read (search, lookup, trends) + write (post, like, retweet, follow) with OAuth 2.0 PKCE",
       "author": "teleton",
       "tags": ["social", "twitter", "x", "search", "trends"],
       "path": "plugins/twitter"
