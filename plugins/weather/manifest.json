@@ -1,0 +1,21 @@
+{
+  "id": "weather",
+  "name": "Weather",
+  "version": "1.0.0",
+  "description": "Current weather and 7-day forecast via Open-Meteo API — free, no API key required",
+  "author": {
+    "name": "walged",
+    "url": "https://github.com/walged"
+  },
+  "license": "MIT",
+  "entry": "index.js",
+  "teleton": ">=1.0.0",
+  "tools": [
+    { "name": "weather_current", "description": "Get current weather for any city" },
+    { "name": "weather_forecast", "description": "Get 7-day weather forecast for a city" }
+  ],
+  "permissions": [],
+  "tags": ["weather", "forecast", "open-meteo"],
+  "repository": "https://github.com/walged/teleton-plugins",
+  "funding": null
+}

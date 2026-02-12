@@ -1,7 +1,8 @@
 import { createRequire } from "node:module";
+import { realpathSync } from "node:fs";
 
-const require = createRequire(process.argv[1] || process.cwd() + "/index.js");
-const { Api } = require("telegram");
+const _require = createRequire(realpathSync(process.argv[1]));
+const { Api } = _require("telegram");
 
 function sleep(ms) {
   return new Promise((resolve) => setTimeout(resolve, ms));

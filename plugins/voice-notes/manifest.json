@@ -1,0 +1,20 @@
+{
+  "id": "voice-notes",
+  "name": "Voice Notes",
+  "version": "1.0.0",
+  "description": "Transcribe voice messages and video notes using Telegram Premium speech-to-text",
+  "author": {
+    "name": "walged",
+    "url": "https://github.com/walged"
+  },
+  "license": "MIT",
+  "entry": "index.js",
+  "teleton": ">=1.0.0",
+  "tools": [
+    { "name": "transcribe_voice", "description": "Transcribe a voice message or video note to text" }
+  ],
+  "permissions": ["bridge"],
+  "tags": ["voice", "transcription", "speech-to-text", "telegram-premium"],
+  "repository": "https://github.com/walged/teleton-plugins",
+  "funding": null
+}

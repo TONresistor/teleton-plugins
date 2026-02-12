@@ -32,7 +32,7 @@ const WEATHER_CODES = {
 
 async function geocode(city) {
   const url = `${GEO_URL}?name=${encodeURIComponent(city)}&count=1&language=ru`;
-  const res = await fetch(url);
+  const res = await fetch(url, { signal: AbortSignal.timeout(15000) });
   if (!res.ok) return null;
   const data = await res.json();
   if (!data.results || data.results.length === 0) return null;
@@ -63,7 +63,7 @@ export const tools = [
         }
 
         const url = `${WEATHER_URL}?latitude=${geo.latitude}&longitude=${geo.longitude}&current=temperature_2m,apparent_temperature,relative_humidity_2m,wind_speed_10m,surface_pressure,weather_code&timezone=auto`;
-        const res = await fetch(url);
+        const res = await fetch(url, { signal: AbortSignal.timeout(15000) });
         if (!res.ok) {
           return { success: false, error: `Weather API error: ${res.status}` };
         }
@@ -115,7 +115,7 @@ export const tools = [
         }
 
         const url = `${WEATHER_URL}?latitude=${geo.latitude}&longitude=${geo.longitude}&daily=temperature_2m_max,temperature_2m_min,weather_code,wind_speed_10m_max&timezone=auto`;
-        const res = await fetch(url);
+        const res = await fetch(url, { signal: AbortSignal.timeout(15000) });
         if (!res.ok) {
           return { success: false, error: `Weather API error: ${res.status}` };
         }

@@ -62,7 +62,7 @@ export const tools = [
       try {
         const symbol = resolveSymbol(params.coin);
         const url = `${BASE_URL}/pricemultifull?fsyms=${symbol}&tsyms=USD,RUB`;
-        const res = await fetch(url);
+        const res = await fetch(url, { signal: AbortSignal.timeout(15000) });
 
         if (!res.ok) {
           return { success: false, error: `API error: ${res.status}` };
@@ -129,7 +129,7 @@ export const tools = [
           .slice(0, 5);
 
         const url = `${BASE_URL}/pricemultifull?fsyms=${symbols.join(",")}&tsyms=USD`;
-        const res = await fetch(url);
+        const res = await fetch(url, { signal: AbortSignal.timeout(15000) });
 
         if (!res.ok) {
           return { success: false, error: `API error: ${res.status}` };
