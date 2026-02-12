@@ -2,7 +2,7 @@
   "id": "crypto-prices",
   "name": "Crypto Prices",
   "version": "1.0.0",
-  "description": "Real-time cryptocurrency prices and comparison via CryptoCompare API — free, no API key required",
+  "description": "Real-time cryptocurrency prices and comparison via CryptoCompare API",
   "author": {
     "name": "walged",
     "url": "https://github.com/walged"
@@ -15,7 +15,7 @@
     { "name": "crypto_compare", "description": "Compare up to 5 cryptocurrencies side by side" }
   ],
   "permissions": [],
-  "tags": ["crypto", "prices", "bitcoin", "ethereum", "ton"],
-  "repository": "https://github.com/walged/teleton-plugins",
+  "tags": ["crypto", "prices", "utility"],
+  "repository": "https://github.com/TONresistor/teleton-plugins",
   "funding": null
 }
