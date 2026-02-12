@@ -53,6 +53,7 @@ Teleton loads every `.js` file (or `folder/index.js`) from `~/.teleton/plugins/`
 | [weather](plugins/weather/) | Current weather and 7-day forecast via Open-Meteo API | 2 |
 | [crypto-prices](plugins/crypto-prices/) | Real-time cryptocurrency prices and comparison for 5000+ coins | 2 |
 | [voice-notes](plugins/voice-notes/) | Transcribe voice messages using Telegram Premium speech-to-text | 1 |
+| [fragment](plugins/fragment/) | Fragment marketplace -- search usernames, numbers, collectible gifts, auctions, prices | 6 |
 
 ## Quick Start
 
