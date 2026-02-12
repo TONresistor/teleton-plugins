@@ -6,8 +6,21 @@
  * Data from the public TONAPI (optional Bearer token for higher rate limits).
  */
 
+import { readFileSync } from "fs";
+import { join } from "path";
+import { homedir } from "os";
+
+function loadApiKey() {
+  if (process.env.TONAPI_KEY) return process.env.TONAPI_KEY;
+  try {
+    const raw = readFileSync(join(homedir(), ".teleton", "config.yaml"), "utf-8");
+    const match = raw.match(/^tonapi_key:\s*"?([^"\n]+)"?/m);
+    return match ? match[1].trim() : null;
+  } catch { return null; }
+}
+
 const API_BASE = "https://tonapi.io";
-const API_KEY = process.env.TONAPI_KEY ?? null;
+const API_KEY = loadApiKey();
 const RATE_LIMIT_MS = API_KEY ? 1000 : 4000;
 
 // ---------------------------------------------------------------------------

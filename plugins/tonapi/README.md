@@ -34,13 +34,20 @@ mkdir -p ~/.teleton/plugins
 cp -r plugins/tonapi ~/.teleton/plugins/
 ```
 
-Optionally set a TONAPI key for higher rate limits:
+### API key (recommended)
 
-```bash
-export TONAPI_KEY="your-api-key"
+Some endpoints (jetton info, jetton holders) **require** an API key. Without one you'll get 401 errors on those routes, and all requests are rate-limited to one every 4 seconds.
+
+Get a free key from [tonconsole.com](https://tonconsole.com), then add it to your teleton config:
+
+```yaml
+# ~/.teleton/config.yaml
+tonapi_key: "YOUR_KEY_HERE"
 ```
 
-Without a key, requests are rate-limited to one every 4 seconds. With a key, the limit drops to 1 second.
+The plugin reads the key from `config.yaml` automatically. Alternatively you can set the `TONAPI_KEY` env var (takes priority over config).
+
+With a key, the rate limit drops to 1 request per second and all endpoints are available.
 
 ## Usage
 
@@ -189,4 +196,4 @@ No parameters required.
 
 ## API reference
 
-This plugin wraps the [TONAPI v2 REST API](https://tonapi.io). No API key required for basic usage; set `TONAPI_KEY` env var for higher rate limits.
+This plugin wraps the [TONAPI v2 REST API](https://tonapi.io). A free API key is recommended — see [Install](#install) for details.
