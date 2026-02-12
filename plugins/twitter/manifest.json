@@ -1,0 +1,31 @@
+{
+  "id": "twitter",
+  "name": "Twitter/X",
+  "version": "1.0.0",
+  "description": "Read-only access to X/Twitter API v2 — posts, users, search, timelines, trends",
+  "author": { "name": "teleton", "url": "https://github.com/TONresistor" },
+  "license": "MIT",
+  "entry": "index.js",
+  "teleton": ">=1.0.0",
+  "tools": [
+    { "name": "twitter_auth", "description": "Configure Twitter API token (admin DM only)" },
+    { "name": "twitter_post_lookup", "description": "Get a tweet by ID" },
+    { "name": "twitter_search_recent", "description": "Search tweets from the last 7 days" },
+    { "name": "twitter_search_count", "description": "Tweet volume histogram for a query" },
+    { "name": "twitter_user_lookup", "description": "Get user info by username" },
+    { "name": "twitter_user_lookup_id", "description": "Get user info by ID" },
+    { "name": "twitter_user_search", "description": "Search users by keyword" },
+    { "name": "twitter_user_posts", "description": "Get a user's recent tweets" },
+    { "name": "twitter_user_mentions", "description": "Get tweets mentioning a user" },
+    { "name": "twitter_user_followers", "description": "List followers of a user" },
+    { "name": "twitter_user_following", "description": "List accounts a user follows" },
+    { "name": "twitter_liking_users", "description": "Users who liked a tweet" },
+    { "name": "twitter_retweeters", "description": "Users who retweeted a tweet" },
+    { "name": "twitter_quote_posts", "description": "Tweets quoting a given tweet" },
+    { "name": "twitter_trends", "description": "Trending topics by location" }
+  ],
+  "permissions": [],
+  "tags": ["social", "twitter", "x", "search", "trends"],
+  "repository": "https://github.com/TONresistor/teleton-plugins",
+  "funding": null
+}

@@ -120,6 +120,38 @@
       "author": "walged",
       "tags": ["telegram", "voice", "transcription"],
       "path": "plugins/voice-notes"
+    },
+    {
+      "id": "fragment",
+      "name": "Fragment Marketplace",
+      "description": "Search and browse Telegram's NFT marketplace — usernames, numbers, collectible gifts, prices, auctions",
+      "author": "teleton",
+      "tags": ["marketplace", "telegram", "nft", "ton", "usernames", "collectibles"],
+      "path": "plugins/fragment"
+    },
+    {
+      "id": "assets",
+      "name": "TON Assets",
+      "description": "Deploy and mint Soulbound Tokens (TEP-85) on TON",
+      "author": "teleton",
+      "tags": ["ton", "nft", "sbt", "assets"],
+      "path": "plugins/assets"
+    },
+    {
+      "id": "highload",
+      "name": "Highload Wallet v3",
+      "description": "Batch send TON and jettons to up to 254 recipients in a single transaction",
+      "author": "teleton",
+      "tags": ["batch", "ton", "airdrop", "wallet", "transfer"],
+      "path": "plugins/highload"
+    },
+    {
+      "id": "twitter",
+      "name": "Twitter/X",
+      "description": "Read-only access to X/Twitter API v2 — posts, users, search, timelines, trends",
+      "author": "teleton",
+      "tags": ["social", "twitter", "x", "search", "trends"],
+      "path": "plugins/twitter"
     }
   ]
 }
