@@ -82,14 +82,6 @@
       "path": "plugins/geckoterminal"
     },
     {
-      "id": "evaa",
-      "name": "EVAA Protocol",
-      "description": "Lending and borrowing on TON -- supply, borrow, withdraw, repay, liquidate across 4 pools",
-      "author": "teleton",
-      "tags": ["defi", "ton", "lending", "borrowing", "liquidation"],
-      "path": "plugins/evaa"
-    },
-    {
       "id": "dyor",
       "name": "DYOR Token Analytics",
       "description": "TON token analytics from DYOR.io -- search, price, trust score, metrics, DEX trades, holders, pools",
@@ -98,28 +90,12 @@
       "path": "plugins/dyor"
     },
     {
-      "id": "stonfi",
-      "name": "StonFi DEX",
-      "description": "Swap tokens, browse pools, and farm on StonFi DEX -- the largest DEX on TON",
+      "id": "evaa",
+      "name": "EVAA Protocol",
+      "description": "Lending and borrowing on TON -- supply, borrow, withdraw, repay, liquidate across 4 pools",
       "author": "teleton",
-      "tags": ["defi", "ton", "dex", "swap", "liquidity", "farming"],
-      "path": "plugins/stonfi"
-    },
-    {
-      "id": "dedust",
-      "name": "DeDust DEX",
-      "description": "Swap tokens, browse pools, and trade on DeDust -- TON's #2 DEX",
-      "author": "teleton",
-      "tags": ["defi", "ton", "dex", "swap", "liquidity"],
-      "path": "plugins/dedust"
-    },
-    {
-      "id": "tonapi",
-      "name": "TONAPI Explorer",
-      "description": "TON blockchain data from TONAPI -- accounts, jettons, NFTs, prices, transactions, traces, DNS, staking",
-      "author": "teleton",
-      "tags": ["blockchain", "ton", "explorer", "nft", "staking", "dns", "analytics"],
-      "path": "plugins/tonapi"
+      "tags": ["defi", "ton", "lending", "borrowing", "liquidation"],
+      "path": "plugins/evaa"
     }
   ]
 }
