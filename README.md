@@ -7,7 +7,7 @@
 [![Tools](https://img.shields.io/badge/tools-164-E040FB.svg)](#-available-plugins)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](CONTRIBUTING.md)
-[![Telegram](https://img.shields.io/badge/Telegram-community-26A5E4.svg?logo=telegram)](https://t.me/teloton_bot)
+[![Telegram](https://img.shields.io/badge/Telegram-community-26A5E4.svg?logo=telegram)](https://t.me/ResistanceForum)
 
 Community plugin directory for [Teleton](https://github.com/TONresistor/tonnet-ai) — the Telegram AI agent on TON.<br>
 Drop a plugin in `~/.teleton/plugins/` and it's live. No build step, no config.
@@ -154,10 +154,7 @@ See **[CONTRIBUTING.md](CONTRIBUTING.md)** for the full guide — manifest forma
 
 ## Community
 
-[![Telegram](https://img.shields.io/badge/Telegram-Group-26A5E4?style=for-the-badge&logo=telegram)](https://t.me/teloton_bot)
-[![GitHub Issues](https://img.shields.io/badge/GitHub-Issues-181717?style=for-the-badge&logo=github)](https://github.com/TONresistor/teleton-plugins/issues)
-
-- **[Telegram Group](https://t.me/teloton_bot)** — questions, plugin ideas, support
+- **[Telegram Group](https://t.me/ResistanceForum)** — questions, plugin ideas, support
 - **[GitHub Issues](https://github.com/TONresistor/teleton-plugins/issues)** — bug reports, feature requests
 - **[Contributing Guide](CONTRIBUTING.md)** — how to build and submit plugins
 
