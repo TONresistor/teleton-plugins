@@ -3,8 +3,8 @@
 # teleton-plugins
 
 [![GitHub stars](https://img.shields.io/github/stars/TONresistor/teleton-plugins?style=flat&logo=github)](https://github.com/TONresistor/teleton-plugins/stargazers)
-[![Plugins](https://img.shields.io/badge/plugins-25-8B5CF6.svg)](#available-plugins)
-[![Tools](https://img.shields.io/badge/tools-185-E040FB.svg)](#available-plugins)
+[![Plugins](https://img.shields.io/badge/plugins-24-8B5CF6.svg)](#available-plugins)
+[![Tools](https://img.shields.io/badge/tools-171-E040FB.svg)](#available-plugins)
 [![SDK](https://img.shields.io/badge/SDK-v1.0.0-00C896.svg)](#plugin-sdk)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](CONTRIBUTING.md)
@@ -67,7 +67,7 @@ No build step. No npm install. Just copy and go.
 
 ## Available Plugins
 
-> **25 plugins** · **185 tools** · [Browse the registry](registry.json)
+> **24 plugins** · **171 tools** · [Browse the registry](registry.json)
 
 ### DeFi & Trading
 
@@ -90,7 +90,6 @@ No build step. No npm install. Just copy and go.
 | [dyor](plugins/dyor/) | DYOR.io — trust score, price, metrics, holders, pools | 11 | teleton |
 | [geckoterminal](plugins/geckoterminal/) | TON DEX pools — trending, OHLCV, batch prices | 10 | teleton |
 | [crypto-prices](plugins/crypto-prices/) | Real-time prices for 5000+ coins | 2 | walged |
-| [getgems](plugins/getgems/) | Getgems NFT marketplace — browse collections, trade NFTs, view offers, Telegram gifts | 14 | teleton |
 | [fragment](plugins/fragment/) | Fragment marketplace — usernames, numbers, collectible gifts | 6 | teleton |
 
 ### Telegram & Social
