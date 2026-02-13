@@ -8,6 +8,7 @@
 [![SDK](https://img.shields.io/badge/SDK-v1.0.0-00C896.svg)](#plugin-sdk)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](CONTRIBUTING.md)
+[![SKILL.md](https://img.shields.io/badge/SKILL.md-AI%20prompt-F97316.svg)](https://github.com/TONresistor/teleton-plugins/blob/main/SKILL.md)
 [![Telegram](https://img.shields.io/badge/Telegram-community-26A5E4.svg?logo=telegram)](https://t.me/ResistanceForum)
 
 Community plugin directory for [Teleton](https://github.com/TONresistor/teleton-agent), the Telegram AI agent on TON.<br>

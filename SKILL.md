@@ -1,19 +1,29 @@
 # Teleton Plugin Builder
 
-Build plugins for [Teleton](https://github.com/TONresistor/teleton-agent), the Telegram AI agent on TON. Ask the user what plugin or tools they want to build, then follow this workflow.
+You are building a plugin for **Teleton**, a Telegram AI agent on TON. Ask the user what plugin or tools they want to build, then follow this workflow.
 
-- **Agent runtime**: [github.com/TONresistor/teleton-agent](https://github.com/TONresistor/teleton-agent) — core agent, plugin loader, bridge, wallet
-- **Plugin directory**: [github.com/TONresistor/teleton-plugins](https://github.com/TONresistor/teleton-plugins) — community plugins
-- **Plugin dev guide**: [CONTRIBUTING.md](CONTRIBUTING.md)
+## Reference documentation
+
+Before building, read the relevant reference files from the teleton-plugins repo:
+
+- **Full rules & SDK reference**: `CONTRIBUTING.md` — complete guide with tool definition, SDK API tables, error handling, lifecycle, best practices, testing
+- **Simple plugin example**: `plugins/example/index.js` — Pattern A (array of tools, no SDK)
+- **SDK plugin example**: `plugins/example-sdk/index.js` — Pattern B (tools(sdk) with database, TON balance, Telegram messaging)
+- **Advanced SDK plugin**: `plugins/casino/index.js` — real-world SDK plugin with TON payments, payment verification, isolated database, payout logic
+- **Registry**: `registry.json` — list of all existing plugins (check for name conflicts)
+- **README.md** — project overview, plugin list, SDK section
+
+Read at least `CONTRIBUTING.md` and the relevant example before building.
 
 ---
 
 ## Workflow
 
 1. **Ask** the user what they want (plugin name, what it does, which API or bot)
-2. **Plan** — present a structured plan (see below) and ask for validation
-3. **Build** — create all files once the user approves
-4. **Install** — copy to `~/.teleton/plugins/` and restart
+2. **Decide** — determine if the plugin needs the SDK (see decision tree below)
+3. **Plan** — present a structured plan and ask for validation
+4. **Build** — create all files once the user approves
+5. **Install** — copy to `~/.teleton/plugins/` and restart
 
 ---
 
@@ -26,11 +36,49 @@ Determine:
   - **Inline bot** — wraps a Telegram inline bot (@pic, @vid, @gif, @DeezerMusicBot…)
   - **Public API** — calls an external REST API, no auth
   - **Auth API** — external API with Telegram WebApp auth
-  - **On-chain** — signs and sends TON transactions from the agent wallet
   - **Local logic** — pure JavaScript, no external calls
 - **Tools** — list of tool names, what each does, parameters
 - **Does it need GramJS?** — yes for inline bots and WebApp auth
-- **Does it need wallet signing?** — yes for on-chain plugins
+- **Does it need the SDK?** — use the decision tree below
+
+---
+
+## SDK Decision Tree
+
+The Plugin SDK (`tools(sdk)`) gives high-level access to TON, Telegram, database, logging, and config. Use it **only when needed** — simpler plugins should use Pattern A.
+
+**Use `tools(sdk)` (Pattern B) if ANY of these apply:**
+
+| Need | SDK namespace | Example |
+|------|--------------|---------|
+| Check TON balance or wallet address | `sdk.ton.getBalance()`, `sdk.ton.getAddress()` | Casino checking balance before payout |
+| Send TON or verify payments | `sdk.ton.sendTON()`, `sdk.ton.verifyPayment()` | Casino auto-payout, paid services |
+| Get TON price or transactions | `sdk.ton.getPrice()`, `sdk.ton.getTransactions()` | Portfolio tracker |
+| Send Telegram messages programmatically | `sdk.telegram.sendMessage()` | Announcements, notifications |
+| Edit messages or send reactions | `sdk.telegram.editMessage()`, `sdk.telegram.sendReaction()` | Interactive UIs |
+| Send dice/slot animations | `sdk.telegram.sendDice()` | Casino dice game |
+| Need an isolated database | `sdk.db` (requires `export function migrate(db)`) | Tracking user scores, history, state |
+| Plugin-specific config with defaults | `sdk.pluginConfig` + `manifest.defaultConfig` | Customizable thresholds, modes |
+| Structured logging | `sdk.log.info()`, `sdk.log.error()` | Debug, monitoring |
+
+**Use `tools = [...]` (Pattern A) if ALL of these apply:**
+
+- Only calls external APIs (REST, GraphQL) — no TON blockchain interaction
+- Does not need to send Telegram messages from code (only returns data to LLM)
+- Does not need persistent state (no database)
+- Does not need plugin-specific config
+
+**Examples:**
+
+| Plugin | Pattern | Why |
+|--------|---------|-----|
+| `weather` | A (array) | Calls Open-Meteo API, returns data |
+| `pic` | A (array) | Uses inline bot via context.bridge |
+| `gaspump` | A (array) | Calls Gas111 API, uses WebApp auth |
+| `casino` | B (SDK) | Needs sdk.ton (payments), sdk.telegram (dice), sdk.db (history) |
+| `example-sdk` | B (SDK) | Needs sdk.db (counters), sdk.ton (balance), sdk.telegram (messages) |
+
+**Note:** Inline bots and WebApp auth plugins use `context.bridge` directly (Pattern A with `permissions: ["bridge"]`). They do NOT need the SDK unless they also need TON payments or database.
 
 ---
 
@@ -40,12 +88,15 @@ Show this to the user and **wait for approval**:
 
 ```
 Plugin: [name]
-Type: [Inline bot | Public API | Auth API | On-chain | Local logic]
+Pattern: [A (simple) | B (SDK)]
+Reason: [why SDK is/isn't needed]
 
 Tools:
 | Tool        | Description              | Params                              |
 |-------------|--------------------------|-------------------------------------|
 | `tool_name` | What it does             | `query` (string, required), `index` (int, optional) |
+
+SDK features used: [none | sdk.ton, sdk.db, sdk.telegram, sdk.log, sdk.pluginConfig]
 
 Files:
 - plugins/[name]/index.js
@@ -60,27 +111,25 @@ Do NOT build until the user says go.
 
 ## Step 3 — Build
 
-Create all files in `plugins/[name]/`.
+Create all files in `plugins/[name]/` following the patterns below.
 
 ### index.js
 
-**ESM only** — always `export const tools = [...]`, never `module.exports`.
+**ESM only** — always `export const tools`, never `module.exports`.
 
-#### GramJS import (only if plugin needs Telegram MTProto)
+Choose the right pattern:
 
-```javascript
-import { createRequire } from "node:module";
-import { realpathSync } from "node:fs";
+---
 
-const _require = createRequire(realpathSync(process.argv[1]));
-const { Api } = _require("telegram");
-```
+#### Pattern A: Simple tools (array)
 
-#### Tool definition
+For plugins that don't need TON, Telegram messaging, or persistent database.
+
+Reference: `plugins/example/index.js`
 
 ```javascript
 const myTool = {
-  name: "prefix_tool_name",
+  name: "tool_name",
   description: "The LLM reads this to decide when to call the tool. Be specific.",
   parameters: {
     type: "object",
@@ -92,7 +141,6 @@ const myTool = {
   },
   execute: async (params, context) => {
     try {
-      const index = params.index ?? 0;
       // logic here
       return { success: true, data: { result: "..." } };
     } catch (err) {
@@ -104,9 +152,113 @@ const myTool = {
 export const tools = [myTool];
 ```
 
-#### Inline bot pattern
+---
 
-See `plugins/pic/index.js` for a complete example.
+#### Pattern B: SDK tools (function)
+
+For plugins that need TON blockchain, Telegram messaging, isolated database, or config.
+
+Reference: `plugins/example-sdk/index.js` (basic), `plugins/casino/index.js` (advanced)
+
+```javascript
+export const manifest = {
+  name: "my-plugin",
+  version: "1.0.0",
+  sdkVersion: ">=1.0.0",
+  description: "What this plugin does",
+  defaultConfig: {
+    some_setting: "default_value",
+  },
+};
+
+// Optional: export migrate() to get sdk.db (isolated SQLite per plugin)
+export function migrate(db) {
+  db.exec(`CREATE TABLE IF NOT EXISTS my_table (
+    id TEXT PRIMARY KEY,
+    value TEXT
+  )`);
+}
+
+export const tools = (sdk) => [
+  {
+    name: "my_tool",
+    description: "What this tool does",
+    parameters: { type: "object", properties: {}, },
+    scope: "always", // "always" | "dm-only" | "group-only"
+    execute: async (params, context) => {
+      try {
+        // SDK namespaces:
+        // sdk.ton      — getAddress(), getBalance(), getPrice(), sendTON(), getTransactions(), verifyPayment()
+        // sdk.telegram — sendMessage(), editMessage(), sendDice(), sendReaction(), getMessages(), getMe(), getRawClient()
+        // sdk.db       — better-sqlite3 instance (null if no migrate())
+        // sdk.log      — info(), warn(), error(), debug()
+        // sdk.config   — sanitized app config (no secrets)
+        // sdk.pluginConfig — plugin-specific config from config.yaml merged with defaultConfig
+
+        const balance = await sdk.ton.getBalance();
+        sdk.log.info(`Balance: ${balance?.balance}`);
+        return { success: true, data: { balance: balance?.balance } };
+      } catch (err) {
+        return { success: false, error: String(err.message || err).slice(0, 500) };
+      }
+    },
+  },
+];
+
+// Optional: runs after Telegram bridge connects
+export async function start(ctx) {
+  // ctx.bridge, ctx.db, ctx.config, ctx.pluginConfig, ctx.log
+}
+
+// Optional: runs on shutdown
+export async function stop() {
+  // cleanup
+}
+```
+
+**SDK error handling:**
+- Read methods (`getBalance`, `getPrice`, `getTransactions`, `getMessages`) return `null` or `[]` on failure — never throw
+- Write methods (`sendTON`, `sendMessage`, `sendDice`) throw `PluginSDKError` with `.code`:
+  - `WALLET_NOT_INITIALIZED` — wallet not set up
+  - `INVALID_ADDRESS` — bad TON address
+  - `BRIDGE_NOT_CONNECTED` — Telegram not ready
+  - `OPERATION_FAILED` — generic failure
+
+---
+
+#### GramJS import (only if plugin needs raw Telegram MTProto)
+
+```javascript
+import { createRequire } from "node:module";
+import { realpathSync } from "node:fs";
+
+const _require = createRequire(realpathSync(process.argv[1]));
+const { Api } = _require("telegram");
+```
+
+With SDK plugins, prefer `sdk.telegram.getRawClient()` over `context.bridge.getClient().getClient()`.
+
+#### API fetch helper (for plugins calling external APIs)
+
+```javascript
+const API_BASE = "https://api.example.com";
+
+async function apiFetch(path, params = {}) {
+  const url = new URL(path, API_BASE);
+  for (const [key, value] of Object.entries(params)) {
+    if (value !== undefined && value !== null) {
+      url.searchParams.set(key, String(value));
+    }
+  }
+  const res = await fetch(url, { signal: AbortSignal.timeout(15000) });
+  if (!res.ok) {
+    throw new Error(`API error: ${res.status} ${await res.text().catch(() => "")}`);
+  }
+  return res.json();
+}
+```
+
+#### Inline bot pattern (@pic, @vid, @gif, @DeezerMusicBot…)
 
 ```javascript
 execute: async (params, context) => {
@@ -158,31 +310,7 @@ execute: async (params, context) => {
 }
 ```
 
-#### Public API pattern
-
-See `plugins/giftstat/index.js` for a complete example.
-
-```javascript
-const API_BASE = "https://api.example.com";
-
-async function apiFetch(path, params = {}) {
-  const url = new URL(path, API_BASE);
-  for (const [key, value] of Object.entries(params)) {
-    if (value !== undefined && value !== null) {
-      url.searchParams.set(key, String(value));
-    }
-  }
-  const res = await fetch(url, { signal: AbortSignal.timeout(15000) });
-  if (!res.ok) {
-    throw new Error(`API error: ${res.status} ${await res.text().catch(() => "")}`);
-  }
-  return res.json();
-}
-```
-
 #### WebApp auth pattern (Telegram-authenticated APIs)
-
-See `plugins/gaspump/index.js` for a complete example.
 
 ```javascript
 let cachedAuth = null;
@@ -203,80 +331,46 @@ async function getAuth(bridge, botUsername, webAppUrl) {
   cachedAuthTime = Date.now();
   return cachedAuth;
 }
-
-// Auth fetch with retry on expiry
-async function authFetch(bridge, path, opts = {}) {
-  const doFetch = async (auth) => {
-    const res = await fetch(new URL(path, API_BASE), {
-      ...opts,
-      headers: { ...opts.headers, Authorization: auth },
-      signal: AbortSignal.timeout(15000),
-    });
-    if (!res.ok) {
-      const text = await res.text().catch(() => "");
-      throw new Error(`API error: ${res.status} ${text}`);
-    }
-    return res.json();
-  };
-
-  try {
-    return await doFetch(await getAuth(bridge, "botUsername", "https://webapp.url"));
-  } catch (err) {
-    if (/permission denied|unauthorized|403|401/i.test(err.message)) {
-      cachedAuth = null;
-      return await doFetch(await getAuth(bridge, "botUsername", "https://webapp.url"));
-    }
-    throw err;
-  }
-}
 ```
 
-#### On-chain / wallet signing pattern (TON transactions)
+#### Payment verification pattern (SDK)
 
-See `plugins/stormtrade/index.js` for a complete example.
+Reference: `plugins/casino/index.js`
 
 ```javascript
-import { createRequire } from "node:module";
-import { readFileSync, realpathSync } from "node:fs";
-import { join } from "node:path";
-import { homedir } from "node:os";
-
-const _require = createRequire(realpathSync(process.argv[1]));
-const { Address, beginCell, SendMode } = _require("@ton/core");
-const { WalletContractV5R1, TonClient, internal } = _require("@ton/ton");
-const { mnemonicToPrivateKey } = _require("@ton/crypto");
-
-const WALLET_FILE = join(homedir(), ".teleton", "wallet.json");
-
-async function getWalletAndClient() {
-  const walletData = JSON.parse(readFileSync(WALLET_FILE, "utf-8"));
-  const keyPair = await mnemonicToPrivateKey(walletData.mnemonic);
-  const wallet = WalletContractV5R1.create({ workchain: 0, publicKey: keyPair.publicKey });
-
-  let endpoint;
-  try {
-    const { getHttpEndpoint } = _require("@orbs-network/ton-access");
-    endpoint = await getHttpEndpoint({ network: "mainnet" });
-  } catch {
-    endpoint = "https://toncenter.com/api/v2/jsonRPC";
-  }
-
-  const client = new TonClient({ endpoint });
-  const contract = client.open(wallet);
-  return { wallet, keyPair, client, contract };
+export function migrate(db) {
+  db.exec(`CREATE TABLE IF NOT EXISTS used_transactions (
+    tx_hash TEXT PRIMARY KEY,
+    user_id TEXT NOT NULL,
+    amount REAL NOT NULL,
+    game_type TEXT NOT NULL,
+    used_at INTEGER NOT NULL DEFAULT (unixepoch())
+  )`);
 }
 
-// Usage in execute:
-const { wallet, keyPair, client, contract } = await getWalletAndClient();
-const seqno = await contract.getSeqno();
-await contract.sendTransfer({
-  seqno,
-  secretKey: keyPair.secretKey,
-  sendMode: SendMode.PAY_GAS_SEPARATELY + SendMode.IGNORE_ERRORS,
-  messages: [
-    internal({ to: txParams.to, value: txParams.value, body: txParams.body, bounce: true }),
-  ],
-});
+export const tools = (sdk) => [{
+  name: "verify_and_process",
+  execute: async (params, context) => {
+    const payment = await sdk.ton.verifyPayment({
+      amount: params.amount,
+      memo: params.username,
+      gameType: "my_service",
+      maxAgeMinutes: 10,
+    });
+
+    if (!payment.verified) {
+      const address = sdk.ton.getAddress();
+      return { success: false, error: `Send ${params.amount} TON to ${address} with memo: ${params.username}` };
+    }
+
+    // Process the verified payment...
+    // payment.playerWallet — sender's address (for refunds/payouts)
+    // payment.compositeKey — unique tx identifier
+    // payment.amount — verified amount
+
+    return { success: true, data: { verified: true, from: payment.playerWallet } };
+  }
+}];
 ```
 
 ### manifest.json
@@ -301,8 +395,10 @@ await contract.sendTransfer({
 }
 ```
 
-> Set `"permissions": ["bridge"]` only if the plugin uses `context.bridge`. Default is `[]`.
-> The `id` field **must match** the plugin folder name.
+Notes:
+- Add `"sdkVersion": ">=1.0.0"` **only** if using `tools(sdk)` (Pattern B)
+- Add `"permissions": ["bridge"]` only if using `context.bridge` directly (not needed with SDK)
+- `permissions` is `[]` for most plugins
 
 ### README.md
 
@@ -351,124 +447,11 @@ Add to the `plugins` array:
 
 ---
 
-## Step 4 — Install and verify
+## Step 4 — Install and commit
 
-```bash
-cp -r plugins/PLUGIN_ID ~/.teleton/plugins/
-```
-
-Verify the plugin loads:
-
-```bash
-node -e "import('./plugins/PLUGIN_ID/index.js').then(m => console.log(m.tools.length, 'tools exported'))"
-```
-
-After restarting Teleton, check console output:
-
-```
-Plugin "PLUGIN_ID": N tools registered    <- success
-```
-
-Commit if the user wants: `git add plugins/PLUGIN_ID/ registry.json && git commit -m "PLUGIN_NAME: short description"`
-
----
-
-## Advanced patterns
-
-### Factory function for similar endpoints
-
-When multiple tools share the same fetch/paginate logic, use a factory:
-
-```javascript
-function makePaginatedTool(name, description, endpoint, extraParams = {}) {
-  return {
-    name,
-    description,
-    parameters: {
-      type: "object",
-      properties: {
-        limit: { type: "integer", description: "Results per page", minimum: 1, maximum: 100 },
-        offset: { type: "integer", description: "Pagination offset", minimum: 0 },
-        ...extraParams,
-      },
-      required: [],
-    },
-    execute: async (params) => {
-      try {
-        const data = await apiFetch(endpoint, { limit: params.limit ?? 20, offset: params.offset ?? 0 });
-        return { success: true, data };
-      } catch (err) {
-        return { success: false, error: String(err.message || err).slice(0, 500) };
-      }
-    },
-  };
-}
-
-export const tools = [
-  makePaginatedTool("prefix_list_items", "List all items", "/items"),
-  makePaginatedTool("prefix_list_users", "List all users", "/users"),
-];
-```
-
-### Enum parameters
-
-Use `enum` in JSON Schema for fixed option sets:
-
-```javascript
-properties: {
-  direction: { type: "string", enum: ["long", "short"], description: "Trade direction" },
-  order_type: { type: "string", enum: ["stopLoss", "takeProfit", "stopLimit"], description: "Order type" },
-}
-```
-
-### Helper functions
-
-Extract repeated logic into reusable helpers:
-
-```javascript
-function parseAmount(amount, vault) {
-  const v = (vault ?? "usdt").toLowerCase();
-  if (v === "usdt") return toStablecoin(Number(amount)); // 6 decimals
-  return numToNano(Number(amount)); // 9 decimals
-}
-```
-
-### Multi-step operations
-
-Track each step and return context for the LLM:
-
-```javascript
-execute: async (params, context) => {
-  const steps = [];
-  try {
-    const auth = await getAuth(context.bridge);
-    steps.push("authenticated");
-
-    const upload = await uploadImage(auth, params.image);
-    steps.push(`image uploaded: ${upload.url}`);
-
-    const token = await createToken(auth, { ...params, image_url: upload.url });
-    steps.push(`token created: ${token.address}`);
-
-    return { success: true, data: { ...token, steps } };
-  } catch (err) {
-    return { success: false, error: String(err.message || err).slice(0, 500), steps };
-  }
-}
-```
-
-### Parameter validation
-
-Validate inputs explicitly before processing:
-
-```javascript
-if (params.sides < 2 || params.sides > 100) {
-  return { success: false, error: "sides must be between 2 and 100" };
-}
-if (!Array.isArray(params.choices) || params.choices.length < 2) {
-  return { success: false, error: "choices must have at least 2 items" };
-}
-```
+1. Copy: `cp -r plugins/PLUGIN_ID ~/.teleton/plugins/`
+2. Commit: `git add plugins/PLUGIN_ID/ registry.json && git commit -m "PLUGIN_NAME: short description"`
+3. Ask user if they want to push.
 
 ---
 
@@ -476,112 +459,53 @@ if (!Array.isArray(params.choices) || params.choices.length < 2) {
 
 - **ESM only** — `export const tools`, never `module.exports`
 - **JS only** — the plugin loader reads `.js` files only
-- **Tool names** — `snake_case`, prefixed with plugin name or short unique prefix (e.g. `gas_`, `storm_`, `gift_`), globally unique
-- **Folder = ID** — plugin folder name must match the `id` field in manifest.json
-- **Permissions** — set `"permissions": ["bridge"]` in manifest.json if the plugin uses `context.bridge`, otherwise `[]`
+- **Tool names** — `snake_case`, globally unique across all plugins, prefixed with plugin name
 - **Defaults** — use `??` (nullish coalescing), never `||`
-- **Errors** — always try/catch in execute, return `{ success: false, error }`, slice errors to 500 chars
-- **Timeouts** — `AbortSignal.timeout(15000)` on all external `fetch()` calls
-- **No npm deps** — plugins cannot install packages. Use native `fetch` and runtime packages (`@ton/core`, `@ton/ton`, `@ton/crypto`, `telegram`)
+- **Errors** — always try/catch in execute, return `{ success: false, error }`, slice to 500 chars
+- **Timeouts** — `AbortSignal.timeout(15000)` on all external fetch calls
+- **No npm deps** — use native `fetch`, no external packages
 - **GramJS** — always `createRequire(realpathSync(process.argv[1]))`, never `import from "telegram"`
-- **Client chain** — `context.bridge.getClient().getClient()` for raw GramJS client
-
----
+- **Client chain** — `context.bridge.getClient().getClient()` OR `sdk.telegram.getRawClient()` for raw GramJS
+- **SDK preferred** — when using SDK, prefer `sdk.telegram` over `context.bridge`, `sdk.db` over `context.db`
+- **Scope** — add `scope: "dm-only"` on financial/private tools, `scope: "group-only"` on moderation tools
+- **SDK decision** — only use Pattern B if the plugin actually needs TON, Telegram messaging, database, or config (see decision tree)
 
 ## Context object
 
+Available in `execute(params, context)` for **all** plugins (Pattern A and B):
+
 | Field | Type | Description |
 |-------|------|-------------|
-| `bridge` | TelegramBridge | Telegram access — messages, reactions, media, raw GramJS MTProto |
-| `db` | better-sqlite3 Database | SQLite instance at `~/.teleton/memory.db` for persistence |
-| `chatId` | string | Current Telegram chat ID |
+| `bridge` | TelegramBridge | Send messages, reactions, media (low-level) |
+| `db` | Database | SQLite (shared — prefer `sdk.db` for isolation) |
+| `chatId` | string | Current chat ID |
 | `senderId` | number | Telegram user ID of caller |
 | `isGroup` | boolean | `true` = group, `false` = DM |
-| `config` | Config \| undefined | Agent YAML config (may be undefined) |
+| `config` | Config? | Agent config (may be undefined) |
 
-## Bridge methods
+## SDK object
+
+Available **only** in `tools(sdk)` function plugins (Pattern B):
+
+| Namespace | Methods |
+|-----------|---------|
+| `sdk.ton` | `getAddress()`, `getBalance(addr?)`, `getPrice()`, `sendTON(to, amount, comment?)`, `getTransactions(addr, limit?)`, `verifyPayment(params)` |
+| `sdk.telegram` | `sendMessage(chatId, text, opts?)`, `editMessage(chatId, messageId, text, opts?)`, `sendDice(chatId, emoticon, replyToId?)`, `sendReaction(chatId, messageId, emoji)`, `getMessages(chatId, limit?)`, `getMe()`, `isAvailable()`, `getRawClient()` |
+| `sdk.db` | `better-sqlite3` instance (requires `export function migrate(db)`) |
+| `sdk.log` | `info()`, `warn()`, `error()`, `debug()` |
+| `sdk.config` | Sanitized app config (no API keys) |
+| `sdk.pluginConfig` | Plugin config from `config.yaml` merged with `manifest.defaultConfig` |
+
+## Bridge methods (legacy)
+
+Only needed for Pattern A plugins that use `context.bridge` directly:
 
 ```javascript
-// Send a message
 await context.bridge.sendMessage({ chatId, text, replyToId?, inlineKeyboard? });
-
-// Edit an existing message
-await context.bridge.editMessage({ chatId, messageId, text, inlineKeyboard? });
-
-// Send a reaction emoji
 await context.bridge.sendReaction(chatId, messageId, emoji);
-
-// Show typing indicator
+await context.bridge.editMessage({ chatId, messageId, text, inlineKeyboard? });
 await context.bridge.setTyping(chatId);
-
-// Get recent messages (returns TelegramMessage[])
 const msgs = await context.bridge.getMessages(chatId, limit);
-
-// Get cached peer entity
 const peer = context.bridge.getPeer(chatId);
-
-// Get raw GramJS MTProto client (full Api.* namespace)
 const gramjs = context.bridge.getClient().getClient();
-
-// Get agent's own user ID / username
-const myId = context.bridge.getOwnUserId();
-const username = context.bridge.getUsername();
 ```
-
-## Tool fields
-
-| Field | Type | Required | Description |
-|-------|------|----------|-------------|
-| `name` | string | **Yes** | Unique name across all plugins, `snake_case` with plugin prefix |
-| `description` | string | **Yes** | What the tool does — the LLM reads this to decide when to call it |
-| `parameters` | object | No | JSON Schema for params. Defaults to empty object if omitted |
-| `execute` | async function | **Yes** | `(params, context) => Promise<{ success, data/error }>` |
-
-## Return format
-
-```javascript
-// Success — data is serialized to JSON and fed back to the LLM
-return { success: true, data: { /* anything */ } };
-
-// Error — error string shown to LLM, always slice
-return { success: false, error: String(err.message || err).slice(0, 500) };
-```
-
-## Runtime packages
-
-Provided by the [Teleton runtime](https://github.com/TONresistor/teleton-agent) and available via `createRequire`:
-
-| Package | Use case |
-|---------|----------|
-| `telegram` (GramJS) | MTProto client, `Api.*` namespace |
-| `@ton/core` | Cell building, Address, beginCell, SendMode |
-| `@ton/ton` | WalletContractV5R1, TonClient, internal |
-| `@ton/crypto` | mnemonicToPrivateKey |
-| `@orbs-network/ton-access` | Decentralized TON API endpoints |
-| `better-sqlite3` | SQLite (accessed via `context.db`) |
-
-Plugins **cannot** install their own npm packages. If an SDK is needed, it must be installed in the teleton runtime's `node_modules/`.
-
-## Agent wallet
-
-On-chain plugins sign transactions from `~/.teleton/wallet.json` (WalletContractV5R1, generated during `teleton setup`).
-
-## Plugin loading
-
-The agent loads plugins from `~/.teleton/plugins/` at startup ([source](https://github.com/TONresistor/teleton-agent/blob/main/src/agent/tools/plugin-loader.ts)):
-
-1. Scans directory for `.js` files and `directory/index.js`
-2. Dynamic `import()` each entry
-3. Validates `tools` array with `name`, `description`, `execute`
-4. Checks name collisions — first registered wins, collisions silently skipped
-5. Load order: core tools → built-in modules → external plugins
-
-## Example plugins
-
-| Plugin | Type | Source |
-|--------|------|--------|
-| `example` | Local logic | `plugins/example/index.js` |
-| `pic` | Inline bot | `plugins/pic/index.js` |
-| `giftstat` | Public API | `plugins/giftstat/index.js` |
-| `gaspump` | Auth API + On-chain | `plugins/gaspump/index.js` |
-| `stormtrade` | On-chain + SDK | `plugins/stormtrade/index.js` |
