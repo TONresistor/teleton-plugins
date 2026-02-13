@@ -184,6 +184,14 @@
       "author": "teleton",
       "tags": ["nft", "ton", "marketplace", "trading", "collectibles"],
       "path": "plugins/getgems"
+    },
+    {
+      "id": "casino",
+      "name": "Teleton Casino",
+      "description": "Slot machine and dice games with TON payments and auto-payout",
+      "author": "teleton",
+      "tags": ["casino", "games", "ton", "gambling"],
+      "path": "plugins/casino"
     }
   ]
 }
