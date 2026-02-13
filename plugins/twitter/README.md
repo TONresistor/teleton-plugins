@@ -23,7 +23,7 @@ X/Twitter API v2 — read (search, lookup, trends) + write (post, like, retweet,
 | `twitter_quote_posts` | Tweets quoting a given tweet |
 | `twitter_trends` | Trending topics by location |
 
-### Write (OAuth 2.0)
+### Write (OAuth 1.0a)
 
 | Tool | Description |
 |------|-------------|
@@ -40,7 +40,8 @@ X/Twitter API v2 — read (search, lookup, trends) + write (post, like, retweet,
 
 | Tool | Description |
 |------|-------------|
-| `twitter_auth` | Configure API tokens (admin DM only) |
+| `twitter_auth` | Configure Bearer Token for read access (admin DM only) |
+| `twitter_oauth` | Set up OAuth 1.0a for write access (admin DM only) |
 
 ## Install
 
@@ -51,7 +52,7 @@ cp -r plugins/twitter ~/.teleton/plugins/
 
 ## Authentication
 
-All auth is done via DM with the bot using `twitter_auth`. Admin only.
+All auth is done via DM with the bot. Admin only.
 
 ### Step 1 — Bearer Token (read-only)
 
@@ -65,26 +66,21 @@ Then DM the bot:
 
 > "Configure twitter with this bearer token: AAAA..."
 
-### Step 2 — OAuth 2.0 (write access)
+### Step 2 — OAuth 1.0a (write access)
 
-For write tools (post, like, retweet, follow), you need OAuth 2.0:
+For write tools (post, like, retweet, follow, bookmark), you need OAuth 1.0a credentials:
 
 1. Go to your app on [developer.x.com](https://developer.x.com)
-2. Open **User authentication settings**
-3. Enable **OAuth 2.0**
-4. Set app type to **Web App** (confidential) or **Native App** (public)
-5. Set redirect URL to `https://example.com/callback`
-6. Copy your **Client ID** (and **Client Secret** if Web App)
+2. Go to **Keys and tokens**
+3. Under **Consumer Keys**, copy the **API Key** and **API Key Secret**
+4. Under **Authentication Tokens**, generate (or regenerate) an **Access Token and Secret** with **Read and write** permissions
+5. Copy the **Access Token** and **Access Token Secret**
 
 Then DM the bot:
 
-> "Set up twitter OAuth with client ID: xxxx and client secret: yyyy"
+> "Set up twitter OAuth with consumer key: xxxx, consumer secret: yyyy, access token: zzzz, access token secret: wwww"
 
-The bot will send you an authorization link. Click it, authorize on Twitter, then copy the `code` parameter from the redirect URL and paste it:
-
-> "Here's the code: abc123def456"
-
-Done! Write tools are now active. Tokens auto-refresh when they expire.
+No redirect flow needed — just paste the 4 keys and it's done.
 
 ## Usage
 
@@ -102,11 +98,16 @@ Done! Write tools are now active. Tokens auto-refresh when they expire.
 
 | Param | Type | Required | Description |
 |-------|------|----------|-------------|
-| `bearer_token` | string | No | Bearer Token for read-only access |
-| `client_id` | string | No | OAuth 2.0 Client ID (starts OAuth flow) |
-| `client_secret` | string | No | OAuth 2.0 Client Secret (Web App type only) |
-| `redirect_uri` | string | No | OAuth redirect URI (default: https://example.com/callback) |
-| `oauth_code` | string | No | Authorization code from redirect URL (completes OAuth flow) |
+| `bearer_token` | string | Yes | Bearer Token from X Developer Portal |
+
+### twitter_oauth
+
+| Param | Type | Required | Description |
+|-------|------|----------|-------------|
+| `consumer_key` | string | Yes | Consumer Key (API Key) |
+| `consumer_secret` | string | Yes | Consumer Secret (API Key Secret) |
+| `access_token` | string | Yes | Access Token (Read and write) |
+| `access_token_secret` | string | Yes | Access Token Secret |
 
 ### twitter_post_lookup
 
