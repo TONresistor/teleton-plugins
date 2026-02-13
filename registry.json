@@ -192,6 +192,14 @@
       "author": "teleton",
       "tags": ["casino", "games", "ton", "gambling"],
       "path": "plugins/casino"
+    },
+    {
+      "id": "example-sdk",
+      "name": "SDK Example",
+      "description": "SDK example — greeting counter, balance check, and announcements",
+      "author": "teleton",
+      "tags": ["example", "sdk", "utility"],
+      "path": "plugins/example-sdk"
     }
   ]
 }

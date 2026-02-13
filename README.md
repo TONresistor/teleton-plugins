@@ -3,8 +3,9 @@
 # teleton-plugins
 
 [![GitHub stars](https://img.shields.io/github/stars/TONresistor/teleton-plugins?style=flat&logo=github)](https://github.com/TONresistor/teleton-plugins/stargazers)
-[![Plugins](https://img.shields.io/badge/plugins-23-8B5CF6.svg)](#-available-plugins)
-[![Tools](https://img.shields.io/badge/tools-178-E040FB.svg)](#-available-plugins)
+[![Plugins](https://img.shields.io/badge/plugins-25-8B5CF6.svg)](#available-plugins)
+[![Tools](https://img.shields.io/badge/tools-185-E040FB.svg)](#available-plugins)
+[![SDK](https://img.shields.io/badge/SDK-v1.0.0-00C896.svg)](#plugin-sdk)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](CONTRIBUTING.md)
 [![Telegram](https://img.shields.io/badge/Telegram-community-26A5E4.svg?logo=telegram)](https://t.me/ResistanceForum)
@@ -26,8 +27,10 @@ Drop a plugin in `~/.teleton/plugins/` and it's live. No build step, no config.
   - [Market Data & Analytics](#market-data--analytics)
   - [Telegram & Social](#telegram--social)
   - [TON Infrastructure](#ton-infrastructure)
+  - [Games & Entertainment](#games--entertainment)
   - [Utilities](#utilities)
 - [Create a Plugin](#create-a-plugin)
+- [Plugin SDK](#plugin-sdk)
 - [Community](#community)
 - [Contributors](#contributors)
 - [License](#license)
@@ -45,7 +48,7 @@ User message
   → LLM responds to user
 ```
 
-Teleton loads every folder from `~/.teleton/plugins/` at startup. Each plugin exports a `tools` array. The `execute` function receives the LLM's parameters and an optional `context` with Telegram bridge access. The returned `data` object is serialized to JSON and fed back to the LLM.
+Teleton loads every folder from `~/.teleton/plugins/` at startup. Each plugin exports a `tools` array (or a function that receives the [Plugin SDK](#plugin-sdk)). The `execute` function receives the LLM's parameters and a `context` with Telegram bridge access. The returned `data` object is serialized to JSON and fed back to the LLM.
 
 ## Quick Start
 
@@ -64,7 +67,7 @@ No build step. No npm install. Just copy and go.
 
 ## Available Plugins
 
-> **23 plugins** · **178 tools** · [Browse the registry](registry.json)
+> **25 plugins** · **185 tools** · [Browse the registry](registry.json)
 
 ### DeFi & Trading
 
@@ -93,8 +96,8 @@ No build step. No npm install. Just copy and go.
 | Plugin | Description | Tools | Author |
 |--------|-------------|:-----:|--------|
 | [twitter](plugins/twitter/) | X/Twitter API v2 — search, post, like, retweet, follow | 24 | teleton |
-| [fragment](plugins/fragment/) | Fragment marketplace — usernames, numbers, collectible gifts | 6 | teleton |
 | [getgems](plugins/getgems/) | Getgems NFT marketplace — browse collections, trade NFTs, view offers, Telegram gifts | 14 | teleton |
+| [fragment](plugins/fragment/) | Fragment marketplace — usernames, numbers, collectible gifts | 6 | teleton |
 | [pic](plugins/pic/) | Image search via @pic inline bot | 1 | teleton |
 | [vid](plugins/vid/) | YouTube search via @vid inline bot | 1 | teleton |
 | [deezer](plugins/deezer/) | Music search via @DeezerMusicBot | 1 | teleton |
@@ -107,11 +110,18 @@ No build step. No npm install. Just copy and go.
 | [multisend](plugins/multisend/) | Batch send TON/jettons to 254 recipients in one TX | 5 | teleton |
 | [sbt](plugins/sbt/) | Deploy and mint Soulbound Tokens (TEP-85) | 2 | teleton |
 
+### Games & Entertainment
+
+| Plugin | Description | Tools | Author |
+|--------|-------------|:-----:|--------|
+| [casino](plugins/casino/) | Slot machine and dice games with TON payments and auto-payout | 4 | teleton |
+
 ### Utilities
 
 | Plugin | Description | Tools | Author |
 |--------|-------------|:-----:|--------|
 | [example](plugins/example/) | Dice roller and random picker | 2 | teleton |
+| [example-sdk](plugins/example-sdk/) | SDK example — greeting counter, balance check, announcements | 3 | teleton |
 | [weather](plugins/weather/) | Weather and 7-day forecast via Open-Meteo | 2 | walged |
 
 ## Create a Plugin
@@ -120,7 +130,7 @@ Every plugin is a folder with three files:
 
 ```
 plugins/your-plugin/
-  index.js         # exports tools[]
+  index.js         # exports tools[] or tools(sdk)
   manifest.json    # plugin metadata
   README.md        # documentation
 ```
@@ -151,7 +161,38 @@ export const tools = [
 3. Add your plugin to `registry.json`
 4. Open a PR
 
-See **[CONTRIBUTING.md](CONTRIBUTING.md)** for the full guide — manifest format, context API, bridge access, wallet signing, and best practices.
+See **[CONTRIBUTING.md](CONTRIBUTING.md)** for the full guide — manifest format, context API, SDK reference, and best practices.
+
+## Plugin SDK
+
+Plugins that need TON or Telegram features can export `tools` as a function to receive the SDK:
+
+```js
+export const tools = (sdk) => [
+  {
+    name: "check_balance",
+    description: "Check TON wallet balance",
+    execute: async (params, context) => {
+      const balance = await sdk.ton.getBalance();
+      sdk.log.info(`Balance: ${balance?.balance}`);
+      return { success: true, data: { balance: balance?.balance } };
+    }
+  }
+];
+```
+
+The SDK provides:
+
+| Namespace | What it does |
+|-----------|-------------|
+| `sdk.ton` | Wallet balance, send TON, transaction history, payment verification |
+| `sdk.telegram` | Send/edit messages, dice, reactions, inline keyboards |
+| `sdk.db` | Isolated SQLite database per plugin (requires `migrate()` export) |
+| `sdk.log` | Prefixed logger (`info`, `warn`, `error`, `debug`) |
+| `sdk.config` | Sanitized app config (no secrets) |
+| `sdk.pluginConfig` | Plugin-specific config with defaults from manifest |
+
+Full SDK reference in **[CONTRIBUTING.md](CONTRIBUTING.md#plugin-sdk)**.
 
 ## Community
 
