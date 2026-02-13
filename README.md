@@ -90,14 +90,14 @@ No build step. No npm install. Just copy and go.
 | [dyor](plugins/dyor/) | DYOR.io — trust score, price, metrics, holders, pools | 11 | teleton |
 | [geckoterminal](plugins/geckoterminal/) | TON DEX pools — trending, OHLCV, batch prices | 10 | teleton |
 | [crypto-prices](plugins/crypto-prices/) | Real-time prices for 5000+ coins | 2 | walged |
+| [getgems](plugins/getgems/) | Getgems NFT marketplace — browse collections, trade NFTs, view offers, Telegram gifts | 14 | teleton |
+| [fragment](plugins/fragment/) | Fragment marketplace — usernames, numbers, collectible gifts | 6 | teleton |
 
 ### Telegram & Social
 
 | Plugin | Description | Tools | Author |
 |--------|-------------|:-----:|--------|
 | [twitter](plugins/twitter/) | X/Twitter API v2 — search, post, like, retweet, follow | 24 | teleton |
-| [getgems](plugins/getgems/) | Getgems NFT marketplace — browse collections, trade NFTs, view offers, Telegram gifts | 14 | teleton |
-| [fragment](plugins/fragment/) | Fragment marketplace — usernames, numbers, collectible gifts | 6 | teleton |
 | [pic](plugins/pic/) | Image search via @pic inline bot | 1 | teleton |
 | [vid](plugins/vid/) | YouTube search via @vid inline bot | 1 | teleton |
 | [deezer](plugins/deezer/) | Music search via @DeezerMusicBot | 1 | teleton |
