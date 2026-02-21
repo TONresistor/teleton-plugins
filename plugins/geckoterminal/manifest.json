@@ -1,0 +1,30 @@
+{
+  "id": "geckoterminal",
+  "name": "GeckoTerminal",
+  "version": "1.0.0",
+  "description": "TON DEX pool and token data -- trending, new, and top pools, trades, OHLCV, token info, batch prices",
+  "author": {
+    "name": "teleton",
+    "url": "https://github.com/TONresistor"
+  },
+  "license": "MIT",
+  "entry": "index.js",
+  "teleton": ">=1.0.0",
+  "sdkVersion": ">=1.0.0",
+  "tools": [
+    { "name": "gecko_trending_pools", "description": "Get trending pools on TON by activity" },
+    { "name": "gecko_new_pools", "description": "Get newly created pools on TON (last 48h)" },
+    { "name": "gecko_top_pools", "description": "Get top pools on TON by liquidity and volume" },
+    { "name": "gecko_search_pools", "description": "Search pools by token name, symbol, or address" },
+    { "name": "gecko_pool_info", "description": "Get detailed info for a specific pool" },
+    { "name": "gecko_pool_trades", "description": "Get recent trades for a pool" },
+    { "name": "gecko_pool_ohlcv", "description": "Get OHLCV candlestick data for a pool" },
+    { "name": "gecko_token_info", "description": "Get full token data (price, volume, FDV, supply)" },
+    { "name": "gecko_token_pools", "description": "Get all pools trading a specific token" },
+    { "name": "gecko_token_prices", "description": "Batch price lookup for multiple tokens (up to 30)" }
+  ],
+  "permissions": [],
+  "tags": ["market-data", "dex", "analytics", "ton", "trading", "defi"],
+  "repository": "https://github.com/TONresistor/teleton-plugins",
+  "funding": null
+}

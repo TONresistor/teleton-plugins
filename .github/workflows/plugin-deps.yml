@@ -1,0 +1,71 @@
+name: Plugin Dependencies
+
+on:
+  pull_request:
+    paths:
+      - "plugins/*/package.json"
+      - "plugins/*/package-lock.json"
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Find plugins with package.json
+        id: find
+        run: |
+          plugins=""
+          for pkg in plugins/*/package.json; do
+            dir=$(dirname "$pkg")
+            name=$(basename "$dir")
+            plugins="$plugins $name"
+          done
+          echo "plugins=$plugins" >> "$GITHUB_OUTPUT"
+
+      - name: Verify lockfiles exist
+        run: |
+          exit_code=0
+          for pkg in plugins/*/package.json; do
+            dir=$(dirname "$pkg")
+            if [ ! -f "$dir/package-lock.json" ]; then
+              echo "::error file=$pkg::Missing package-lock.json alongside package.json"
+              exit_code=1
+            fi
+          done
+          exit $exit_code
+
+      - name: Check for postinstall scripts
+        run: |
+          for pkg in plugins/*/package.json; do
+            dir=$(dirname "$pkg")
+            name=$(basename "$dir")
+            if [ -f "$dir/package-lock.json" ]; then
+              if grep -q '"postinstall"' "$dir/package-lock.json"; then
+                echo "::warning file=$pkg::Plugin '$name' has dependencies with postinstall scripts"
+              fi
+            fi
+          done
+
+      - name: Install and audit deps
+        run: |
+          exit_code=0
+          for pkg in plugins/*/package.json; do
+            dir=$(dirname "$pkg")
+            name=$(basename "$dir")
+            if [ ! -f "$dir/package-lock.json" ]; then
+              continue
+            fi
+            echo "--- $name ---"
+            if ! npm ci --ignore-scripts --no-audit --no-fund --prefix "$dir"; then
+              echo "::error file=$pkg::npm ci failed for plugin '$name'"
+              exit_code=1
+              continue
+            fi
+            npm audit --prefix "$dir" || echo "::warning file=$pkg::Audit issues in plugin '$name'"
+          done
+          exit $exit_code

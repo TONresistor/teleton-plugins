@@ -1,0 +1,21 @@
+{
+  "id": "casino",
+  "name": "Teleton Casino",
+  "version": "1.0.0",
+  "description": "Slot machine and dice games with TON payments and auto-payout",
+  "author": { "name": "teleton", "url": "https://github.com/TONresistor" },
+  "license": "MIT",
+  "entry": "index.js",
+  "teleton": ">=1.0.0",
+  "sdkVersion": ">=1.0.0",
+  "tools": [
+    { "name": "casino_balance", "description": "Check casino bankroll and betting limits" },
+    { "name": "casino_spin", "description": "Execute a slot machine spin" },
+    { "name": "casino_dice", "description": "Execute a dice roll" },
+    { "name": "casino_my_stats", "description": "Show player's personal statistics" }
+  ],
+  "permissions": [],
+  "tags": ["casino", "games", "ton", "gambling"],
+  "repository": "https://github.com/TONresistor/teleton-plugins",
+  "funding": null
+}

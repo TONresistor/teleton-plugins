@@ -1,0 +1,23 @@
+{
+  "id": "swapcoffee",
+  "name": "swap.coffee DEX Aggregator",
+  "version": "1.0.0",
+  "description": "Swap tokens on TON via swap.coffee aggregator - best rates across all DEXes",
+  "author": { "name": "teleton", "url": "https://github.com/TONresistor" },
+  "license": "MIT",
+  "entry": "index.js",
+  "teleton": ">=1.0.0",
+  "sdkVersion": ">=1.0.0",
+  "tools": [
+    { "name": "swap_quote", "description": "Get optimal swap route with expected output and price impact" },
+    { "name": "swap_execute", "description": "Execute a token swap from the agent wallet" },
+    { "name": "swap_status", "description": "Check swap execution status" },
+    { "name": "swap_tokens", "description": "Search/lookup TON tokens with metadata and price" },
+    { "name": "swap_price", "description": "Get USD prices for TON tokens" },
+    { "name": "swap_pools", "description": "Browse liquidity pools by TVL, volume, or APR" }
+  ],
+  "permissions": [],
+  "tags": ["defi", "ton", "dex", "swap", "trading", "aggregator"],
+  "repository": "https://github.com/TONresistor/teleton-plugins",
+  "funding": null
+}

@@ -1,0 +1,10 @@
+{
+  "name": "teleton-plugin-evaa",
+  "type": "module",
+  "version": "1.0.0",
+  "private": true,
+  "dependencies": {
+    "@evaafi/sdk": "^0.9.5",
+    "@orbs-network/ton-access": "^2.3.3"
+  }
+}

@@ -1,0 +1,22 @@
+{
+  "id": "sbt",
+  "name": "TON SBT",
+  "version": "2.0.0",
+  "description": "Deploy and mint Soulbound Tokens (TEP-85) on TON",
+  "author": {
+    "name": "teleton",
+    "url": "https://github.com/TONresistor"
+  },
+  "license": "MIT",
+  "entry": "index.js",
+  "teleton": ">=1.0.0",
+  "sdkVersion": ">=1.0.0",
+  "tools": [
+    { "name": "sbt_deploy_collection", "description": "Deploy a new SBT collection on TON" },
+    { "name": "sbt_mint", "description": "Mint a soulbound token in a collection" }
+  ],
+  "permissions": [],
+  "tags": ["ton", "nft", "sbt"],
+  "repository": "https://github.com/TONresistor/teleton-plugins",
+  "funding": null
+}

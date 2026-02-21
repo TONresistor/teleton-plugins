@@ -1,0 +1,181 @@
+{
+  "version": "1.0.0",
+  "plugins": [
+    {
+      "id": "giftstat",
+      "name": "Giftstat Market Data",
+      "description": "Telegram gift market data -- collections, floor prices, models, stats, history",
+      "author": "teleton",
+      "tags": ["market-data", "ton", "gifts", "trading", "api"],
+      "path": "plugins/giftstat"
+    },
+    {
+      "id": "gaspump",
+      "name": "Gas111 Token Launcher",
+      "description": "Launch, trade, and manage meme tokens on Gas111/TON",
+      "author": "teleton",
+      "tags": ["token-launch", "ton", "meme-tokens", "trading", "api"],
+      "path": "plugins/gaspump"
+    },
+    {
+      "id": "pic",
+      "name": "@pic — Inline Image Search",
+      "description": "Search and send images via Telegram's @pic inline bot (Yandex Image Search)",
+      "author": "teleton",
+      "tags": ["images", "search", "inline-bot"],
+      "path": "plugins/pic"
+    },
+    {
+      "id": "vid",
+      "name": "@vid — Inline YouTube Search",
+      "description": "Search and send YouTube videos via Telegram's @vid inline bot",
+      "author": "teleton",
+      "tags": ["videos", "search", "inline-bot"],
+      "path": "plugins/vid"
+    },
+    {
+      "id": "deezer",
+      "name": "@DeezerMusicBot — Inline Music Search",
+      "description": "Search and send music tracks via Telegram's @DeezerMusicBot inline bot (Deezer)",
+      "author": "teleton",
+      "tags": ["music", "deezer", "search", "inline-bot"],
+      "path": "plugins/deezer"
+    },
+    {
+      "id": "giftindex",
+      "name": "GiftIndex ODROB Trading",
+      "description": "GiftIndex ODROB trading -- monitor, analyze and trade the Telegram Gifts index on TON",
+      "author": "teleton",
+      "tags": ["trading", "ton", "gifts", "defi"],
+      "path": "plugins/giftindex"
+    },
+    {
+      "id": "stormtrade",
+      "name": "Storm Trade Perpetual Futures",
+      "description": "Trade perpetual futures on Storm Trade DEX — crypto, stocks, forex, commodities",
+      "author": "teleton",
+      "tags": ["trading", "ton", "defi", "perpetual-futures", "derivatives"],
+      "path": "plugins/stormtrade"
+    },
+    {
+      "id": "swapcoffee",
+      "name": "swap.coffee DEX Aggregator",
+      "description": "Swap tokens on TON via swap.coffee aggregator — best rates across all DEXes",
+      "author": "teleton",
+      "tags": ["defi", "ton", "dex", "swap", "trading", "aggregator"],
+      "path": "plugins/swapcoffee"
+    },
+    {
+      "id": "dedust",
+      "name": "DeDust DEX",
+      "description": "Swap tokens, browse pools, and trade on DeDust — TON's #2 DEX",
+      "author": "teleton",
+      "tags": ["defi", "ton", "dex", "swap", "liquidity"],
+      "path": "plugins/dedust"
+    },
+    {
+      "id": "stonfi",
+      "name": "StonFi DEX",
+      "description": "Swap tokens, browse pools, and farm on StonFi DEX — the largest DEX on TON",
+      "author": "teleton",
+      "tags": ["defi", "ton", "dex", "swap", "liquidity", "farming"],
+      "path": "plugins/stonfi"
+    },
+    {
+      "id": "geckoterminal",
+      "name": "GeckoTerminal",
+      "description": "TON DEX pool and token data -- trending, new, and top pools, trades, OHLCV, token info, batch prices",
+      "author": "teleton",
+      "tags": ["market-data", "dex", "analytics", "ton", "trading", "defi"],
+      "path": "plugins/geckoterminal"
+    },
+    {
+      "id": "dyor",
+      "name": "DYOR Token Analytics",
+      "description": "TON token analytics from DYOR.io -- search, price, trust score, metrics, DEX trades, holders, pools",
+      "author": "teleton",
+      "tags": ["analytics", "ton", "market-data", "trust-score", "defi", "dex"],
+      "path": "plugins/dyor"
+    },
+    {
+      "id": "tonapi",
+      "name": "TONAPI Explorer",
+      "description": "TON blockchain data from TONAPI -- accounts, jettons, NFTs, prices, transactions, traces, DNS, staking",
+      "author": "teleton",
+      "tags": ["blockchain", "ton", "explorer", "nft", "staking", "dns", "analytics"],
+      "path": "plugins/tonapi"
+    },
+    {
+      "id": "evaa",
+      "name": "EVAA Protocol",
+      "description": "Lending and borrowing on TON -- supply, borrow, withdraw, repay, liquidate across 4 pools",
+      "author": "teleton",
+      "tags": ["defi", "ton", "lending", "borrowing", "liquidation"],
+      "path": "plugins/evaa"
+    },
+    {
+      "id": "weather",
+      "name": "Weather Forecast",
+      "description": "Current weather and 7-day forecast via Open-Meteo API",
+      "author": "walged",
+      "tags": ["weather", "utility"],
+      "path": "plugins/weather"
+    },
+    {
+      "id": "crypto-prices",
+      "name": "Crypto Prices",
+      "description": "Real-time cryptocurrency prices and comparison via CryptoCompare API",
+      "author": "walged",
+      "tags": ["crypto", "prices", "utility"],
+      "path": "plugins/crypto-prices"
+    },
+    {
+      "id": "voice-notes",
+      "name": "Voice Notes Transcription",
+      "description": "Transcribe voice messages using Telegram Premium speech-to-text",
+      "author": "walged",
+      "tags": ["telegram", "voice", "transcription"],
+      "path": "plugins/voice-notes"
+    },
+    {
+      "id": "fragment",
+      "name": "Fragment Marketplace",
+      "description": "Search and browse Telegram's NFT marketplace — usernames, numbers, collectible gifts, auction history",
+      "author": "teleton",
+      "tags": ["marketplace", "telegram", "nft", "ton", "usernames", "collectibles"],
+      "path": "plugins/fragment"
+    },
+    {
+      "id": "sbt",
+      "name": "TON SBT",
+      "description": "Deploy and mint Soulbound Tokens (TEP-85) on TON",
+      "author": "teleton",
+      "tags": ["ton", "nft", "sbt"],
+      "path": "plugins/sbt"
+    },
+    {
+      "id": "multisend",
+      "name": "Multisend",
+      "description": "Batch send TON and jettons to up to 254 recipients in a single transaction",
+      "author": "teleton",
+      "tags": ["batch", "ton", "airdrop", "wallet", "transfer"],
+      "path": "plugins/multisend"
+    },
+    {
+      "id": "twitter",
+      "name": "Twitter/X",
+      "description": "X/Twitter API v2 — read (search, lookup, trends) + write (post, like, retweet, follow) with OAuth 1.0a",
+      "author": "teleton",
+      "tags": ["social", "twitter", "x", "search", "trends"],
+      "path": "plugins/twitter"
+    },
+    {
+      "id": "casino",
+      "name": "Teleton Casino",
+      "description": "Slot machine and dice games with TON payments and auto-payout",
+      "author": "teleton",
+      "tags": ["casino", "games", "ton", "gambling"],
+      "path": "plugins/casino"
+    }
+  ]
+}

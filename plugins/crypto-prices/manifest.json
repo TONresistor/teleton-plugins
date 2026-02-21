@@ -1,0 +1,22 @@
+{
+  "id": "crypto-prices",
+  "name": "Crypto Prices",
+  "version": "1.0.0",
+  "description": "Real-time cryptocurrency prices and comparison via CryptoCompare API",
+  "author": {
+    "name": "walged",
+    "url": "https://github.com/walged"
+  },
+  "license": "MIT",
+  "entry": "index.js",
+  "teleton": ">=1.0.0",
+  "sdkVersion": ">=1.0.0",
+  "tools": [
+    { "name": "crypto_price", "description": "Get current price for any coin in USD and RUB" },
+    { "name": "crypto_compare", "description": "Compare up to 5 cryptocurrencies side by side" }
+  ],
+  "permissions": [],
+  "tags": ["crypto", "prices", "utility"],
+  "repository": "https://github.com/TONresistor/teleton-plugins",
+  "funding": null
+}

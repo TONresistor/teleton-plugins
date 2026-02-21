@@ -1,0 +1,9 @@
+{
+  "name": "teleton-plugin-giftindex",
+  "type": "module",
+  "version": "2.0.0",
+  "private": true,
+  "dependencies": {
+    "@orbs-network/ton-access": "^2.3.3"
+  }
+}

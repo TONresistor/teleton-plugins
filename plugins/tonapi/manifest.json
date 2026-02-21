@@ -1,0 +1,43 @@
+{
+  "id": "tonapi",
+  "name": "TONAPI Explorer",
+  "version": "1.0.0",
+  "description": "TON blockchain data from TONAPI -- accounts, jettons, NFTs, prices, transactions, traces, DNS, staking",
+  "author": {
+    "name": "teleton",
+    "url": "https://github.com/TONresistor"
+  },
+  "license": "MIT",
+  "entry": "index.js",
+  "sdkVersion": ">=1.0.0",
+  "teleton": ">=1.0.0",
+  "secrets": {
+    "api_key": { "required": false, "description": "TONAPI Bearer token for higher rate limits (optional, public API works without it)" }
+  },
+  "tools": [
+    { "name": "tonapi_account", "description": "Get TON account info by address or .ton domain" },
+    { "name": "tonapi_account_jettons", "description": "List jetton balances for a TON wallet" },
+    { "name": "tonapi_account_nfts", "description": "List NFTs owned by a TON account" },
+    { "name": "tonapi_account_events", "description": "Get recent events/transactions for a TON account" },
+    { "name": "tonapi_account_search", "description": "Search TON accounts by domain name" },
+    { "name": "tonapi_jetton_info", "description": "Get jetton metadata and stats by master contract address" },
+    { "name": "tonapi_jetton_holders", "description": "List top holders of a jetton" },
+    { "name": "tonapi_rates", "description": "Get current exchange rates for TON tokens" },
+    { "name": "tonapi_rates_chart", "description": "Get historical price chart data for a token" },
+    { "name": "tonapi_nft_collection", "description": "Get NFT collection details by contract address" },
+    { "name": "tonapi_nft_items", "description": "List NFT items in a collection" },
+    { "name": "tonapi_nft_item", "description": "Get detailed info about a single NFT item" },
+    { "name": "tonapi_transaction", "description": "Look up a TON transaction by hash" },
+    { "name": "tonapi_trace", "description": "Get execution trace for a TON transaction" },
+    { "name": "tonapi_validators", "description": "List current TON blockchain validators" },
+    { "name": "tonapi_dns_resolve", "description": "Resolve a .ton domain to wallet/site address" },
+    { "name": "tonapi_dns_info", "description": "Get domain info including owner and expiry" },
+    { "name": "tonapi_dns_auctions", "description": "List active .ton domain auctions" },
+    { "name": "tonapi_staking_pools", "description": "List available TON staking pools" },
+    { "name": "tonapi_staking_pool", "description": "Get detailed info for a specific staking pool" }
+  ],
+  "permissions": [],
+  "tags": ["blockchain", "ton", "explorer", "nft", "staking", "dns", "analytics"],
+  "repository": "https://github.com/TONresistor/teleton-plugins",
+  "funding": null
+}

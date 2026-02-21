@@ -1,0 +1,28 @@
+{
+  "id": "evaa",
+  "name": "EVAA Protocol",
+  "version": "1.0.0",
+  "description": "Lending and borrowing on TON -- supply, borrow, withdraw, repay, liquidate across 4 pools",
+  "author": { "name": "teleton", "url": "https://github.com/TONresistor" },
+  "license": "MIT",
+  "entry": "index.js",
+  "teleton": ">=1.0.0",
+  "sdkVersion": ">=1.0.0",
+  "tools": [
+    { "name": "evaa_markets", "description": "Market data: APY, utilization, TVL per asset" },
+    { "name": "evaa_assets", "description": "Asset configs: collateral factor, liquidation threshold" },
+    { "name": "evaa_prices", "description": "Current oracle prices for all assets" },
+    { "name": "evaa_user_position", "description": "User position: balances, health factor, limits" },
+    { "name": "evaa_predict", "description": "Simulate health factor impact of supply/withdraw/borrow/repay" },
+    { "name": "evaa_liquidations", "description": "Check if a position is liquidatable" },
+    { "name": "evaa_supply", "description": "Supply TON or jetton to earn interest" },
+    { "name": "evaa_withdraw", "description": "Withdraw supplied assets" },
+    { "name": "evaa_borrow", "description": "Borrow against collateral" },
+    { "name": "evaa_repay", "description": "Repay borrowed assets" },
+    { "name": "evaa_liquidate", "description": "Liquidate undercollateralized position" }
+  ],
+  "permissions": [],
+  "tags": ["defi", "ton", "lending", "borrowing", "liquidation"],
+  "repository": "https://github.com/TONresistor/teleton-plugins",
+  "funding": null
+}

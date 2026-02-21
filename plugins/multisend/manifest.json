@@ -1,0 +1,22 @@
+{
+  "id": "multisend",
+  "name": "Multisend",
+  "version": "1.0.0",
+  "description": "Batch send TON and jettons to up to 254 recipients in a single transaction",
+  "author": { "name": "teleton", "url": "https://github.com/TONresistor" },
+  "license": "MIT",
+  "entry": "index.js",
+  "teleton": ">=1.0.0",
+  "sdkVersion": ">=1.0.0",
+  "tools": [
+    { "name": "multisend_info", "description": "Multisend wallet address, balance, deployment status" },
+    { "name": "multisend_fund", "description": "Fund the multisend wallet from agent wallet" },
+    { "name": "multisend_batch_ton", "description": "Send TON to up to 254 recipients in one TX" },
+    { "name": "multisend_batch_jetton", "description": "Send jettons to up to 254 recipients in one TX" },
+    { "name": "multisend_status", "description": "On-chain wallet state and sequence info" }
+  ],
+  "permissions": [],
+  "tags": ["batch", "ton", "airdrop", "wallet", "transfer"],
+  "repository": "https://github.com/TONresistor/teleton-plugins",
+  "funding": null
+}

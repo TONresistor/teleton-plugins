@@ -1,0 +1,10 @@
+{
+  "name": "teleton-plugin-dedust",
+  "type": "module",
+  "version": "1.0.0",
+  "private": true,
+  "dependencies": {
+    "@dedust/sdk": "^0.8.7",
+    "@orbs-network/ton-access": "^2.3.3"
+  }
+}

@@ -1,0 +1,33 @@
+{
+  "id": "gaspump",
+  "name": "Gas111 Token Launcher",
+  "version": "2.0.0",
+  "description": "Launch, trade, and manage meme tokens on Gas111/TON",
+  "author": {
+    "name": "teleton",
+    "url": "https://github.com/TONresistor"
+  },
+  "license": "MIT",
+  "entry": "index.js",
+  "teleton": ">=1.0.0",
+  "sdkVersion": ">=1.0.0",
+  "tools": [
+    { "name": "gas_launch_token", "description": "Launch a new token (upload, deploy, register — all in one)" },
+    { "name": "gas_token_info", "description": "Get token details and status" },
+    { "name": "gas_token_search", "description": "Search and list tokens" },
+    { "name": "gas_user_tokens", "description": "List tokens created by a user" },
+    { "name": "gas_token_stats", "description": "Get trading stats for a token" },
+    { "name": "gas_update_token", "description": "Update social links on a token" },
+    { "name": "gas_buy", "description": "Buy tokens on a bonding curve" },
+    { "name": "gas_sell", "description": "Sell tokens back to bonding curve" },
+    { "name": "gas_portfolio", "description": "Agent's token portfolio and balances" },
+    { "name": "gas_holders", "description": "List token holders" },
+    { "name": "gas_top_traders", "description": "Top traders for a token (PnL, volume)" },
+    { "name": "gas_price_chart", "description": "Price history chart data" },
+    { "name": "gas_king", "description": "Current King of the Hill token" }
+  ],
+  "permissions": ["bridge"],
+  "tags": ["token-launch", "ton", "meme-tokens", "trading", "api"],
+  "repository": "https://github.com/TONresistor/teleton-plugins",
+  "funding": null
+}

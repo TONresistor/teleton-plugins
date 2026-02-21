@@ -1,0 +1,21 @@
+{
+  "id": "pic",
+  "name": "@pic — Inline Image Search",
+  "version": "1.0.1",
+  "description": "Search and send images via Telegram's @pic inline bot (Yandex Image Search)",
+  "author": {
+    "name": "teleton",
+    "url": "https://github.com/TONresistor"
+  },
+  "license": "MIT",
+  "entry": "index.js",
+  "teleton": ">=1.0.0",
+  "tools": [
+    { "name": "pic", "description": "Search and send an image in the current chat via @pic" }
+  ],
+  "sdkVersion": ">=1.0.0",
+  "permissions": [],
+  "tags": ["images", "search", "inline-bot", "yandex"],
+  "repository": "https://github.com/TONresistor/teleton-plugins",
+  "funding": null
+}

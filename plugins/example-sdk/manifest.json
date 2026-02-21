@@ -1,0 +1,23 @@
+{
+  "id": "example-sdk",
+  "name": "SDK Example",
+  "version": "1.0.0",
+  "description": "SDK example — greeting counter, balance check, and announcements",
+  "author": {
+    "name": "teleton",
+    "url": "https://github.com/TONresistor"
+  },
+  "license": "MIT",
+  "entry": "index.js",
+  "teleton": ">=1.0.0",
+  "sdkVersion": ">=1.0.0",
+  "tools": [
+    { "name": "sdk_greet", "description": "Greet a user and track greeting count" },
+    { "name": "sdk_balance", "description": "Check TON wallet balance and price" },
+    { "name": "sdk_announce", "description": "Send an announcement with optional inline buttons" }
+  ],
+  "permissions": [],
+  "tags": ["example", "sdk", "utility"],
+  "repository": "https://github.com/TONresistor/teleton-plugins",
+  "funding": null
+}

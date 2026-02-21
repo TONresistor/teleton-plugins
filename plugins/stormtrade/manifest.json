@@ -1,0 +1,33 @@
+{
+  "id": "stormtrade",
+  "name": "Storm Trade Perpetual Futures",
+  "version": "1.0.0",
+  "description": "Trade perpetual futures on Storm Trade DEX — crypto, stocks, forex, commodities",
+  "author": {
+    "name": "teleton",
+    "url": "https://github.com/TONresistor"
+  },
+  "license": "MIT",
+  "entry": "index.js",
+  "teleton": ">=1.0.0",
+  "sdkVersion": ">=1.0.0",
+  "tools": [
+    { "name": "storm_markets", "description": "List all available markets with prices, funding rates, and open interest" },
+    { "name": "storm_market_info", "description": "Get detailed info for a specific market" },
+    { "name": "storm_positions", "description": "List trader's open positions with unrealized P&L" },
+    { "name": "storm_orders", "description": "List active and historical orders" },
+    { "name": "storm_trader_stats", "description": "Get trader performance statistics and leaderboard" },
+    { "name": "storm_open_position", "description": "Open a new perpetual position (long or short)" },
+    { "name": "storm_close_position", "description": "Close an existing position (full or partial)" },
+    { "name": "storm_add_margin", "description": "Add margin to an existing position" },
+    { "name": "storm_remove_margin", "description": "Remove excess margin from a position" },
+    { "name": "storm_create_order", "description": "Create a limit, stop-limit, take-profit, or stop-loss order" },
+    { "name": "storm_cancel_order", "description": "Cancel a pending order" },
+    { "name": "storm_stake", "description": "Stake USDT/TON/NOT in a vault to earn trading fees" },
+    { "name": "storm_unstake", "description": "Unstake from a vault" }
+  ],
+  "permissions": [],
+  "tags": ["trading", "ton", "defi", "perpetual-futures", "derivatives"],
+  "repository": "https://github.com/TONresistor/teleton-plugins",
+  "funding": null
+}

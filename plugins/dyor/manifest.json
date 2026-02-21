@@ -1,0 +1,31 @@
+{
+  "id": "dyor",
+  "name": "DYOR Token Analytics",
+  "version": "1.0.0",
+  "description": "TON token analytics from DYOR.io -- search, price, trust score, metrics, DEX trades, holders, pools",
+  "author": {
+    "name": "teleton",
+    "url": "https://github.com/TONresistor"
+  },
+  "license": "MIT",
+  "entry": "index.js",
+  "teleton": ">=1.0.0",
+  "sdkVersion": ">=1.0.0",
+  "tools": [
+    { "name": "dyor_search", "description": "Search TON jettons by name or symbol on DYOR.io" },
+    { "name": "dyor_details", "description": "Get full details for a TON jetton by contract address" },
+    { "name": "dyor_trust_score", "description": "Get the DYOR.io trust score (0-100) for a jetton" },
+    { "name": "dyor_price", "description": "Get current price of a jetton in TON, USD, and optional currency" },
+    { "name": "dyor_price_chart", "description": "Get price chart data points over time" },
+    { "name": "dyor_metrics", "description": "Get consolidated metrics (price, holders, liquidity, FDMC, mcap)" },
+    { "name": "dyor_stats", "description": "Get percent change statistics by time period" },
+    { "name": "dyor_holders", "description": "Get holder count and optional holder history ticks" },
+    { "name": "dyor_transactions", "description": "Get recent DEX transactions for a jetton" },
+    { "name": "dyor_markets", "description": "Get DEX pool/market data for a jetton" },
+    { "name": "dyor_trending", "description": "Get trending TON jettons by chosen metric" }
+  ],
+  "permissions": [],
+  "tags": ["analytics", "ton", "market-data", "trust-score", "defi", "dex"],
+  "repository": "https://github.com/TONresistor/teleton-plugins",
+  "funding": null
+}

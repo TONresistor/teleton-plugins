@@ -1,0 +1,30 @@
+{
+  "id": "webdom",
+  "name": "Webdom Domain Marketplace",
+  "version": "1.0.0",
+  "description": "Buy, sell, auction, and manage .ton domains and Telegram usernames on webdom.market",
+  "author": { "name": "teleton", "url": "https://github.com/TONresistor" },
+  "license": "MIT",
+  "entry": "index.js",
+  "sdkVersion": ">=1.0.0",
+  "teleton": ">=1.0.0",
+  "secrets": {},
+  "tools": [
+    { "name": "webdom_search_domains", "description": "Search and filter .ton domains and Telegram usernames on the marketplace" },
+    { "name": "webdom_domain_info", "description": "Get detailed info about a specific .ton domain or username" },
+    { "name": "webdom_my_domains", "description": "List domains owned by the agent's wallet or a specified address" },
+    { "name": "webdom_market_stats", "description": "Get marketplace statistics, recent sales, top sales, and price history" },
+    { "name": "webdom_auction_history", "description": "Get bid history for a specific auction" },
+    { "name": "webdom_buy_domain", "description": "Purchase a domain listed at fixed price" },
+    { "name": "webdom_list_for_sale", "description": "List a domain for sale at a fixed price" },
+    { "name": "webdom_create_auction", "description": "Create an auction for a domain" },
+    { "name": "webdom_place_bid", "description": "Place a bid on an active auction" },
+    { "name": "webdom_make_offer", "description": "Make a purchase offer on a domain" },
+    { "name": "webdom_cancel_deal", "description": "Cancel an active sale, auction, or offer" },
+    { "name": "webdom_dns_bid", "description": "Bid on a native TON DNS auction (domain registration or expired domain)" }
+  ],
+  "permissions": [],
+  "tags": ["marketplace", "domains", "ton", "dns", "nft", "auction"],
+  "repository": "https://github.com/TONresistor/teleton-plugins",
+  "funding": null
+}

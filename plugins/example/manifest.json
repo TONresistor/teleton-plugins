@@ -1,0 +1,21 @@
+{
+  "id": "example",
+  "name": "Randomness Toolkit",
+  "version": "1.0.1",
+  "description": "Dice roller and random picker",
+  "author": {
+    "name": "teleton",
+    "url": "https://github.com/TONresistor"
+  },
+  "license": "MIT",
+  "entry": "index.js",
+  "teleton": ">=1.0.0",
+  "tools": [
+    { "name": "dice_roll", "description": "Roll configurable dice with sides, count, and modifier" },
+    { "name": "random_pick", "description": "Randomly pick one item from a list of choices" }
+  ],
+  "permissions": [],
+  "tags": ["games", "utility"],
+  "repository": "https://github.com/TONresistor/teleton-plugins",
+  "funding": null
+}

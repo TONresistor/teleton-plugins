@@ -1,0 +1,16 @@
+node_modules/
+.DS_Store
+*.log
+
+# Private plugins (not for public repo)
+plugins-pv/
+plugins/boards/
+
+# Editor / IDE
+.obsidian/
+.vscode/
+.idea/
+
+# Local dev
+.teleton-bin
+*.tgz

@@ -1,0 +1,61 @@
+{
+  "id": "giftindex",
+  "name": "GiftIndex ODROB Trading",
+  "version": "2.0.0",
+  "description": "GiftIndex ODROB trading with workflow guardrails - monitor, analyze and trade the Telegram Gifts index on TON. Owner-only, corridor-enforced, post-trade verified.",
+  "author": {
+    "name": "teleton",
+    "url": "https://github.com/TONresistor"
+  },
+  "license": "MIT",
+  "entry": "index.js",
+  "teleton": ">=1.0.0",
+  "sdkVersion": ">=1.0.0",
+  "secrets": {
+    "tonapi_key": { "required": false, "description": "TONAPI access key (optional — improves rate limits)" }
+  },
+  "tools": [
+    {
+      "name": "giftindex_market",
+      "description": "Get GiftIndex market overview: TON/USDT rate, fair value, oracle corridors, top asks/bids from order book, and top 10 collections"
+    },
+    {
+      "name": "giftindex_fair_value",
+      "description": "Calculate the fair value of the GiftIndex token by aggregating floor prices of underlying Telegram Gift collections"
+    },
+    {
+      "name": "giftindex_place_bid",
+      "description": "Buy index tokens by matching existing sell orders. Auto-finds best asks, buys whole lots, splits if needed. Owner only.",
+      "params": {
+        "order_book": { "type": "string", "description": "Which order book: GHOLD or FLOOR" },
+        "amount": { "type": "string", "description": "Target USDT amount to spend" },
+        "max_price": { "type": "number", "description": "Optional max price per token" }
+      }
+    },
+    {
+      "name": "giftindex_place_ask",
+      "description": "Place a SELL limit order. Owner only. Min $2, price must be within oracle corridor, includes 10% fee.",
+      "params": {
+        "order_book": { "type": "string", "description": "Which order book: GHOLD or FLOOR" },
+        "amount": { "type": "string", "description": "Token amount" },
+        "price": { "type": "number", "description": "Price in USD (includes 10% fee)" }
+      }
+    },
+    {
+      "name": "giftindex_cancel",
+      "description": "Cancel an existing order and reclaim tokens. Owner only.",
+      "params": {
+        "order_book": { "type": "string", "description": "Which order book: GHOLD or FLOOR" },
+        "query_id": { "type": "string", "description": "The order's query ID" },
+        "order_type": { "type": "string", "description": "buy or sell" }
+      }
+    },
+    {
+      "name": "giftindex_portfolio",
+      "description": "View market state, corridors, corridor advisory (cancel+re-place or wait), and top collections"
+    }
+  ],
+  "tags": ["giftindex", "ton", "trading", "telegram-gifts", "index"],
+  "repository": "https://github.com/TONresistor/teleton-plugins",
+  "funding": null
+}

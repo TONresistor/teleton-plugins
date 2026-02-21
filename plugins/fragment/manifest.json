@@ -1,0 +1,23 @@
+{
+  "id": "fragment",
+  "name": "Fragment Marketplace",
+  "version": "1.0.0",
+  "description": "Search and browse Telegram's NFT marketplace — usernames, numbers, collectible gifts, auction history",
+  "author": { "name": "teleton", "url": "https://github.com/TONresistor" },
+  "license": "MIT",
+  "entry": "index.js",
+  "teleton": ">=1.0.0",
+  "sdkVersion": ">=1.0.0",
+  "tools": [
+    { "name": "fragment_search", "description": "Search usernames, numbers, or gifts on Fragment marketplace" },
+    { "name": "fragment_item", "description": "Get detailed info for a specific Fragment item (username, number, or gift)" },
+    { "name": "fragment_history", "description": "Get ownership or bid history for a Fragment item" },
+    { "name": "fragment_nft", "description": "Get NFT metadata for a Fragment item" },
+    { "name": "fragment_collections", "description": "List available gift collections on Fragment" },
+    { "name": "fragment_rate", "description": "Get current TON/USD exchange rate from Fragment" }
+  ],
+  "permissions": [],
+  "tags": ["marketplace", "telegram", "nft", "ton", "usernames", "collectibles"],
+  "repository": "https://github.com/TONresistor/teleton-plugins",
+  "funding": null
+}

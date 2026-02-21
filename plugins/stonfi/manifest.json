@@ -1,0 +1,25 @@
+{
+  "id": "stonfi",
+  "name": "StonFi DEX",
+  "version": "1.0.0",
+  "description": "Swap tokens, browse pools, and farm on StonFi DEX -- the largest DEX on TON",
+  "author": { "name": "teleton", "url": "https://github.com/TONresistor" },
+  "license": "MIT",
+  "entry": "index.js",
+  "teleton": ">=1.0.0",
+  "sdkVersion": ">=1.0.0",
+  "tools": [
+    { "name": "stonfi_search", "description": "Search tokens on StonFi DEX by name, symbol, or contract address" },
+    { "name": "stonfi_price", "description": "Get the current USD price for a token on StonFi" },
+    { "name": "stonfi_pools", "description": "Search and list liquidity pools on StonFi" },
+    { "name": "stonfi_pool_info", "description": "Get detailed info for a specific StonFi liquidity pool" },
+    { "name": "stonfi_farms", "description": "List active farming opportunities on StonFi" },
+    { "name": "stonfi_dex_stats", "description": "Get overall StonFi DEX statistics including TVL and volume" },
+    { "name": "stonfi_swap_quote", "description": "Get a swap quote -- simulates a swap and returns expected output" },
+    { "name": "stonfi_swap", "description": "Execute a token swap on StonFi DEX from the agent wallet" }
+  ],
+  "permissions": [],
+  "tags": ["defi", "ton", "dex", "swap", "liquidity", "farming"],
+  "repository": "https://github.com/TONresistor/teleton-plugins",
+  "funding": null
+}
