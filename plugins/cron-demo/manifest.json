@@ -1,0 +1,23 @@
+{
+  "id": "cron-demo",
+  "name": "Cron Demo",
+  "version": "1.0.0",
+  "description": "Demonstrates sdk.cron — periodic hello world messages",
+  "author": {
+    "name": "teleton",
+    "url": "https://github.com/therenovatio"
+  },
+  "license": "MIT",
+  "entry": "index.js",
+  "teleton": ">=0.8.0",
+  "sdkVersion": ">=1.0.0",
+  "tools": [
+    { "name": "cron_demo_status", "description": "Show registered cron jobs and their state" },
+    { "name": "cron_demo_set_interval", "description": "Change the hello-world cron interval" },
+    { "name": "cron_demo_toggle", "description": "Enable or disable the hello-world cron job" }
+  ],
+  "permissions": [],
+  "tags": ["utility", "cron", "demo"],
+  "repository": "https://github.com/therenovatio/teleton-plugins",
+  "funding": null
+}

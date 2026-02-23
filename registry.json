@@ -176,6 +176,14 @@
       "author": "teleton",
       "tags": ["casino", "games", "ton", "gambling"],
       "path": "plugins/casino"
+    },
+    {
+      "id": "cron-demo",
+      "name": "Cronjob Demo",
+      "description": "Shows how to register a cron job and manage it via tools",
+      "author": "therenovatio",
+      "tags": ["os", "cron", "demo", "tools"],
+      "path": "plugins/cron-demo"
     }
   ]
 }
