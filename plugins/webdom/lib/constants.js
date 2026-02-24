@@ -17,14 +17,14 @@ export const TON_DNS_COLLECTION = "EQC3dNlesgVD8YbAazcauIrXBPfiVhMMr5YYk2in0Mtsz
 export const USERNAMES_COLLECTION = "EQCA14o1-VWhS2efqoh_9M1b_A9DtKTuoqfmkn83AbJzwnPi";
 
 // ---------------------------------------------------------------------------
-// Deploy opcodes (masked with 0x0fffffff)
+// Deploy opcodes (32-bit, from webdom frontend)
 // ---------------------------------------------------------------------------
 
 export const OP = {
-  TON_SIMPLE_SALE:    0x763e023f,
-  TON_SIMPLE_AUCTION: 0x48615374,
-  TON_SIMPLE_OFFER:   0x1572efe4,
-  DOMAIN_SWAP:        0xc29adb98,
+  TON_SIMPLE_SALE:    0x063e023f,
+  TON_SIMPLE_AUCTION: 0x0860ff74,
+  TON_SIMPLE_OFFER:   0x05733be4,
+  DOMAIN_SWAP:        0x029adb98,
 };
 
 // ---------------------------------------------------------------------------

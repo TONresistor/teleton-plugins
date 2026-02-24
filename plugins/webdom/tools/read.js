@@ -7,6 +7,27 @@
 import { webdomGet, webdomGetCached } from "../lib/api.js";
 import { CACHE_TTL } from "../lib/constants.js";
 
+// ---------------------------------------------------------------------------
+// TONAPI fallback — check on-chain sale status when webdom API is stale
+// ---------------------------------------------------------------------------
+
+async function tonapiNftSale(nftAddress) {
+  try {
+    const url = `https://tonapi.io/v2/nfts/${encodeURIComponent(nftAddress)}`;
+    const res = await fetch(url, { signal: AbortSignal.timeout(10_000) });
+    if (!res.ok) return null;
+    const data = await res.json();
+    if (!data.sale) return null;
+    return {
+      sale_address: data.sale.address,
+      sale_price_ton: data.sale.price?.value ? Number(data.sale.price.value) / 1e9 : null,
+      marketplace: data.sale.market?.name || null,
+    };
+  } catch {
+    return null;
+  }
+}
+
 const SORT_MAP = {
   price_asc: "last_price_ton",
   price_desc: "-last_price_ton",
@@ -174,6 +195,22 @@ export function readTools(sdk) {
           }
 
           const si = d.sale_info || null;
+          let saleAddress = d.sale_address || si?.address || null;
+          let salePriceTon = si?.price != null ? si.price / 1e9 : null;
+          let onSale = d.on_sale || false;
+          let saleType = si?.type || si?.deal_type || null;
+
+          // Fallback: if webdom API shows no sale, check on-chain via TONAPI
+          if (!saleAddress && d.address) {
+            const onChain = await tonapiNftSale(d.address);
+            if (onChain?.sale_address) {
+              saleAddress = onChain.sale_address;
+              salePriceTon = onChain.sale_price_ton || salePriceTon;
+              onSale = true;
+              saleType = saleType || "on-chain (webdom API not synced)";
+            }
+          }
+
           return {
             success: true,
             data: {
@@ -182,13 +219,13 @@ export function readTools(sdk) {
               zone: d.name?.endsWith('.t.me') ? '.t.me' : '.ton',
               address: d.address,
               owner: d.owner_address,
-              on_sale: d.on_sale || false,
+              on_sale: onSale,
               on_auction: d.on_auction || false,
-              sale_address: d.sale_address || si?.address || null,
+              sale_address: saleAddress,
               last_price_ton: d.last_price_ton != null ? d.last_price_ton / 1e9 : null,
-              sale_price_ton: si?.price != null ? si.price / 1e9 : null,
+              sale_price_ton: salePriceTon,
               sale_state: si?.state || null,
-              sale_type: si?.type || si?.deal_type || null,
+              sale_type: saleType,
               seller: si?.seller_address || null,
               valid_until: si?.valid_until || null,
               cancellation_available: si?.cancellation_available ?? null,
@@ -230,6 +267,19 @@ export function readTools(sdk) {
 
           const result = await webdomGet("/domains", { marketplaces: "webdom", owner_address: address });
           const domains = (result.domains || []).map(formatDomain);
+
+          // Enrich domains with on-chain sale info when webdom API is stale
+          for (const d of domains) {
+            if (!d.sale_address && d.address) {
+              const onChain = await tonapiNftSale(d.address);
+              if (onChain?.sale_address) {
+                d.sale_address = onChain.sale_address;
+                d.sale_price_ton = onChain.sale_price_ton || d.sale_price_ton;
+                d.on_sale = true;
+                d.sale_type = d.sale_type || "on-chain (webdom API not synced)";
+              }
+            }
+          }
 
           return {
             success: true,
