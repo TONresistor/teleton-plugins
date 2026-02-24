@@ -19,8 +19,7 @@
     { "name": "webdom_list_for_sale", "description": "List a domain for sale at a fixed price" },
     { "name": "webdom_create_auction", "description": "Create an auction for a domain" },
     { "name": "webdom_place_bid", "description": "Place a bid on an active auction" },
-    { "name": "webdom_make_offer", "description": "Make a purchase offer on a domain" },
-    { "name": "webdom_cancel_deal", "description": "Cancel an active sale, auction, or offer" },
+    { "name": "webdom_cancel_deal", "description": "Cancel an active sale or auction" },
     { "name": "webdom_dns_bid", "description": "Bid on a native TON DNS auction (domain registration or expired domain)" }
   ],
   "permissions": [],

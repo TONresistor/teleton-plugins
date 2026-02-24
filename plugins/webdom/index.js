@@ -21,5 +21,5 @@ import { actionTools } from "./tools/actions.js";
 
 export const tools = (sdk) => {
   initApi(sdk);
-  return [...readTools(sdk), ...actionTools];
+  return [...readTools(sdk), ...actionTools(sdk)];
 };

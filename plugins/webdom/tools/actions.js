@@ -27,63 +27,138 @@ const { mnemonicToPrivateKey } = _require("@ton/crypto");
 // ---------------------------------------------------------------------------
 
 const WALLET_FILE = join(homedir(), ".teleton", "wallet.json");
+
+// ---------------------------------------------------------------------------
+// RPC endpoint resolution (same logic as core endpoint.ts)
+// ---------------------------------------------------------------------------
+
+const ORBS_TOPOLOGY = "https://ton.access.orbs.network/mngr/nodes?npm_version=2.3.3";
+const TONCENTER_FALLBACK = "https://toncenter.com/api/v2/jsonRPC";
+
+async function getAllEndpoints() {
+  const endpoints = [];
+  try {
+    const res = await fetch(ORBS_TOPOLOGY, { signal: AbortSignal.timeout(5000) });
+    const nodes = await res.json();
+    const healthy = nodes.filter(
+      (n) => n.Healthy === "1" && n.Weight > 0 && n.Mngr?.health?.["v2-mainnet"]
+    );
+    // pick 2 random orbs nodes for redundancy
+    const shuffled = healthy.sort(() => Math.random() - 0.5);
+    for (const node of shuffled.slice(0, 2)) {
+      endpoints.push(`https://ton.access.orbs.network/${node.NodeId}/1/mainnet/toncenter-api-v2/jsonRPC`);
+    }
+  } catch {
+    _log?.warn("[webdom] orbs topology fetch failed");
+  }
+  endpoints.push(TONCENTER_FALLBACK);
+  return endpoints;
+}
 const MARKETPLACE = Address.parse(WEBDOM_MARKETPLACE);
 
-const GAS_PURCHASE = toNano("0.07");
+const GAS_PURCHASE = toNano("1");     // nft_sale_v2 requires full_price + 1 TON
 const GAS_BID      = toNano("0.07");
 const GAS_CANCEL   = toNano("0.05");
 const FORWARD_NFT  = toNano("0.3");
-const DEPLOY_OFFER = toNano("0.05");
-
 const OP_MASK = 0x0fffffff;
 
 // NFT transfer op (TEP-62)
 const NFT_TRANSFER_OP = 0x5fcc3d14;
 
+// nft_sale_v2 ops
+const OP_BUY    = 2;
+const OP_CANCEL = 3;
+
 // ---------------------------------------------------------------------------
 // Wallet helper
 // ---------------------------------------------------------------------------
 
-async function getWalletAndClient() {
+let _log = null;
+
+function loadWalletKeyPair() {
   let walletData;
   try {
     walletData = JSON.parse(readFileSync(WALLET_FILE, "utf-8"));
-  } catch {
+  } catch (err) {
+    _log?.error("[webdom] wallet read failed:", err.message);
     throw new Error("Agent wallet not found at " + WALLET_FILE);
   }
   if (!walletData.mnemonic || !Array.isArray(walletData.mnemonic)) {
     throw new Error("Invalid wallet file: missing mnemonic array");
   }
+  return walletData.mnemonic;
+}
 
-  const keyPair = await mnemonicToPrivateKey(walletData.mnemonic);
-  const wallet = WalletContractV5R1.create({
-    workchain: 0,
-    publicKey: keyPair.publicKey,
-  });
-
-  const client = new TonClient({ endpoint: "https://toncenter.com/api/v2/jsonRPC" });
-  const contract = client.open(wallet);
-
-  return { wallet, keyPair, client, contract };
+async function getSaleData(saleAddr) {
+  const endpoints = await getAllEndpoints();
+  let lastErr;
+  for (const ep of endpoints) {
+    try {
+      const client = new TonClient({ endpoint: ep });
+      const res = await client.runMethod(saleAddr, "get_sale_data");
+      // nft_sale_v2 returns: (is_complete, created_at, marketplace_address,
+      //   nft_address, nft_owner_address, full_price, marketplace_fee_address,
+      //   marketplace_fee, royalty_address, royalty_amount)
+      const isComplete = res.stack.readNumber();
+      res.stack.readNumber(); // created_at
+      res.stack.readAddress(); // marketplace_address
+      const nftAddress = res.stack.readAddress();
+      const nftOwner = res.stack.readAddress();
+      const fullPrice = res.stack.readBigNumber();
+      return { isComplete, nftAddress, nftOwner, fullPrice };
+    } catch (err) {
+      lastErr = err;
+    }
+  }
+  throw new Error("Could not read sale data: " + lastErr?.message);
 }
 
 async function sendTransaction(to, value, body) {
-  const { wallet, keyPair, contract } = await getWalletAndClient();
-  const seqno = await contract.getSeqno();
+  _log?.info("[webdom] sendTransaction to:", to.toString(), "value:", value.toString());
 
-  await contract.sendTransfer({
-    seqno,
-    secretKey: keyPair.secretKey,
-    sendMode: SendMode.PAY_GAS_SEPARATELY | SendMode.IGNORE_ERRORS,
-    messages: [
-      internal({ to, value, body, bounce: true }),
-    ],
-  });
+  const mnemonic = loadWalletKeyPair();
+  const keyPair = await mnemonicToPrivateKey(mnemonic);
+  const wallet = WalletContractV5R1.create({ workchain: 0, publicKey: keyPair.publicKey });
+  _log?.info("[webdom] wallet:", wallet.address.toString({ bounceable: true }));
 
-  return {
-    tx_seqno: seqno,
-    wallet_address: wallet.address.toString({ bounceable: true }),
-  };
+  const endpoints = await getAllEndpoints();
+  let lastErr;
+
+  for (const ep of endpoints) {
+    try {
+      _log?.info("[webdom] trying endpoint:", ep);
+      const client = new TonClient({ endpoint: ep });
+      const contract = client.open(wallet);
+
+      const seqno = await contract.getSeqno();
+      _log?.info("[webdom] seqno:", seqno);
+
+      // toncenter rate limit without API key — need ~3s between requests
+      if (ep.includes("toncenter.com")) await new Promise((r) => setTimeout(r, 3000));
+
+      await contract.sendTransfer({
+        seqno,
+        secretKey: keyPair.secretKey,
+        sendMode: SendMode.PAY_GAS_SEPARATELY | SendMode.IGNORE_ERRORS,
+        messages: [
+          internal({ to, value, body, bounce: true }),
+        ],
+      });
+
+      _log?.info("[webdom] transaction sent via", ep, "seqno:", seqno);
+      return {
+        tx_seqno: seqno,
+        wallet_address: wallet.address.toString({ bounceable: true }),
+      };
+    } catch (err) {
+      _log?.warn("[webdom] endpoint failed:", ep, err.message);
+      lastErr = err;
+      // wait 1s before trying next endpoint
+      await new Promise((r) => setTimeout(r, 1000));
+    }
+  }
+
+  throw new Error("All RPC endpoints failed: " + lastErr?.message);
 }
 
 // ---------------------------------------------------------------------------
@@ -118,7 +193,10 @@ function buildNftTransferBody(newOwner, responseAddr, forwardAmount, forwardPayl
 // Action tools
 // ---------------------------------------------------------------------------
 
-export const actionTools = [
+export const actionTools = (sdk) => {
+  _log = sdk.log;
+
+  return [
 
   // ── 1. webdom_buy_domain ────────────────────────────────────────────────
   {
@@ -126,7 +204,7 @@ export const actionTools = [
     description:
       "Purchase a .ton domain or .t.me username listed at a fixed price on webdom. " +
       "Requires the sale contract address (from domain listing) and the price in TON. " +
-      "The transaction sends price + 0.07 TON gas to the sale contract.",
+      "Verifies the on-chain price before sending. The transaction sends price + 1 TON gas.",
     category: "action",
     scope: "dm-only",
     parameters: {
@@ -148,21 +226,53 @@ export const actionTools = [
     execute: async (params) => {
       try {
         const saleAddr = parseAddress(params.sale_address, "sale_address");
-        if (params.price_ton <= 0) {
-          return { success: false, error: "price_ton must be positive" };
+        if (!Number.isFinite(params.price_ton) || params.price_ton <= 0) {
+          return { success: false, error: "price_ton must be a positive number" };
         }
 
-        const value = toNano(String(params.price_ton)) + GAS_PURCHASE;
-        const result = await sendTransaction(saleAddr, value, null);
+        // Verify sale contract on-chain before sending funds
+        _log?.info("[webdom] reading get_sale_data for", params.sale_address);
+        const saleData = await getSaleData(saleAddr);
 
+        if (saleData.isComplete !== 0) {
+          return { success: false, error: "Sale is already completed or cancelled" };
+        }
+
+        const onChainPrice = saleData.fullPrice;
+        const userPrice = toNano(String(params.price_ton));
+
+        // Warn if user price doesn't match on-chain price (allow small rounding)
+        if (userPrice < onChainPrice) {
+          const actualTon = Number(onChainPrice) / 1e9;
+          return {
+            success: false,
+            error: `On-chain price is ${actualTon} TON but you specified ${params.price_ton} TON. Use the on-chain price.`,
+          };
+        }
+
+        // nft_sale_v2: value must be >= full_price + 1 TON (min_gas_amount)
+        const value = onChainPrice + GAS_PURCHASE;
+
+        // nft_sale_v2 buy op: op=2, query_id=0
+        const body = beginCell()
+          .storeUint(OP_BUY, 32)
+          .storeUint(0, 64)
+          .endCell();
+
+        _log?.info("[webdom] buying domain, price:", onChainPrice.toString(), "total:", value.toString());
+        const result = await sendTransaction(saleAddr, value, body);
+
+        const priceTon = Number(onChainPrice) / 1e9;
         return {
           success: true,
           data: {
             ...result,
-            message: `Purchase transaction sent for ${params.price_ton} TON + 0.07 TON gas to sale contract ${params.sale_address}. Check wallet for confirmation.`,
+            on_chain_price_ton: priceTon,
+            message: `Purchase transaction sent: ${priceTon} TON + 1 TON gas to sale contract ${params.sale_address}. NFT will be transferred to your wallet on success.`,
           },
         };
       } catch (err) {
+        _log?.error("[webdom] buy_domain failed:", err.message, err.stack);
         return { success: false, error: err.message };
       }
     },
@@ -199,8 +309,8 @@ export const actionTools = [
     execute: async (params) => {
       try {
         const domainAddr = parseAddress(params.domain_address, "domain_address");
-        if (params.price_ton <= 0) {
-          return { success: false, error: "price_ton must be positive" };
+        if (!Number.isFinite(params.price_ton) || params.price_ton <= 0) {
+          return { success: false, error: "price_ton must be a positive number" };
         }
 
         const durationDays = params.duration_days || 30;
@@ -213,37 +323,26 @@ export const actionTools = [
           .storeUint(validUntil, 32)
           .endCell();
 
-        // Get wallet for signing and response address
-        const { wallet, keyPair, contract } = await getWalletAndClient();
+        // Need wallet address for response_destination in NFT transfer
+        const mnemonic = loadWalletKeyPair();
+        const keyPair = await mnemonicToPrivateKey(mnemonic);
+        const wallet = WalletContractV5R1.create({ workchain: 0, publicKey: keyPair.publicKey });
         const senderAddr = wallet.address;
 
         // Build NFT transfer body
         const body = buildNftTransferBody(MARKETPLACE, senderAddr, FORWARD_NFT, deployPayload);
 
-        const seqno = await contract.getSeqno();
-        await contract.sendTransfer({
-          seqno,
-          secretKey: keyPair.secretKey,
-          sendMode: SendMode.PAY_GAS_SEPARATELY | SendMode.IGNORE_ERRORS,
-          messages: [
-            internal({
-              to: domainAddr,
-              value: FORWARD_NFT + toNano("0.05"), // forward amount + gas
-              body,
-              bounce: true,
-            }),
-          ],
-        });
+        const result = await sendTransaction(domainAddr, FORWARD_NFT + toNano("0.05"), body);
 
         return {
           success: true,
           data: {
-            tx_seqno: seqno,
-            wallet_address: senderAddr.toString({ bounceable: true }),
+            ...result,
             message: `Domain ${params.domain_address} listed for sale at ${params.price_ton} TON for ${durationDays} days. Marketplace will deploy a sale contract.`,
           },
         };
       } catch (err) {
+        _log?.error("[webdom] list_for_sale failed:", err.message, err.stack);
         return { success: false, error: err.message };
       }
     },
@@ -280,8 +379,8 @@ export const actionTools = [
     execute: async (params) => {
       try {
         const domainAddr = parseAddress(params.domain_address, "domain_address");
-        if (params.min_bid_ton <= 0) {
-          return { success: false, error: "min_bid_ton must be positive" };
+        if (!Number.isFinite(params.min_bid_ton) || params.min_bid_ton <= 0) {
+          return { success: false, error: "min_bid_ton must be a positive number" };
         }
 
         const durationHours = params.duration_hours || 24;
@@ -294,35 +393,25 @@ export const actionTools = [
           .storeUint(durationSeconds, 32)
           .endCell();
 
-        const { wallet, keyPair, contract } = await getWalletAndClient();
+        // Need wallet address for response_destination in NFT transfer
+        const mnemonic = loadWalletKeyPair();
+        const keyPair = await mnemonicToPrivateKey(mnemonic);
+        const wallet = WalletContractV5R1.create({ workchain: 0, publicKey: keyPair.publicKey });
         const senderAddr = wallet.address;
 
         const body = buildNftTransferBody(MARKETPLACE, senderAddr, FORWARD_NFT, deployPayload);
 
-        const seqno = await contract.getSeqno();
-        await contract.sendTransfer({
-          seqno,
-          secretKey: keyPair.secretKey,
-          sendMode: SendMode.PAY_GAS_SEPARATELY | SendMode.IGNORE_ERRORS,
-          messages: [
-            internal({
-              to: domainAddr,
-              value: FORWARD_NFT + toNano("0.05"),
-              body,
-              bounce: true,
-            }),
-          ],
-        });
+        const result = await sendTransaction(domainAddr, FORWARD_NFT + toNano("0.05"), body);
 
         return {
           success: true,
           data: {
-            tx_seqno: seqno,
-            wallet_address: senderAddr.toString({ bounceable: true }),
+            ...result,
             message: `Auction created for ${params.domain_address} with minimum bid ${params.min_bid_ton} TON, duration ${durationHours} hours.`,
           },
         };
       } catch (err) {
+        _log?.error("[webdom] create_auction failed:", err.message, err.stack);
         return { success: false, error: err.message };
       }
     },
@@ -356,12 +445,13 @@ export const actionTools = [
     execute: async (params) => {
       try {
         const auctionAddr = parseAddress(params.auction_address, "auction_address");
-        if (params.bid_ton <= 0) {
+        if (!Number.isFinite(params.bid_ton) || params.bid_ton <= 0) {
           return { success: false, error: "bid_ton must be positive" };
         }
 
         const value = toNano(String(params.bid_ton)) + GAS_BID;
-        const result = await sendTransaction(auctionAddr, value, null);
+        const body = beginCell().endCell();
+        const result = await sendTransaction(auctionAddr, value, body);
 
         return {
           success: true,
@@ -371,75 +461,13 @@ export const actionTools = [
           },
         };
       } catch (err) {
+        _log?.error("[webdom]", this?.name || "action", "failed:", err.message, err.stack);
         return { success: false, error: err.message };
       }
     },
   },
 
-  // ── 5. webdom_make_offer ────────────────────────────────────────────────
-  {
-    name: "webdom_make_offer",
-    description:
-      "Make a purchase offer on a .ton domain or .t.me username on webdom. " +
-      "Sends TON to the marketplace which deploys an offer contract with locked funds. " +
-      "The domain owner can accept or the offer expires after the valid period.",
-    category: "action",
-    scope: "dm-only",
-    parameters: {
-      type: "object",
-      properties: {
-        domain_address: {
-          type: "string",
-          description: "The domain NFT contract address to make an offer on.",
-        },
-        offer_ton: {
-          type: "number",
-          description: "Offer amount in TON (e.g. 5.0). This amount will be locked in the offer contract.",
-        },
-        valid_days: {
-          type: "integer",
-          description: "How many days the offer remains valid (default 7).",
-        },
-      },
-      required: ["domain_address", "offer_ton"],
-      additionalProperties: false,
-    },
-    execute: async (params) => {
-      try {
-        const domainAddr = parseAddress(params.domain_address, "domain_address");
-        if (params.offer_ton <= 0) {
-          return { success: false, error: "offer_ton must be positive" };
-        }
-
-        const validDays = params.valid_days || 7;
-        const validUntil = Math.floor(Date.now() / 1000) + validDays * 86400;
-
-        // Build offer deploy payload
-        const body = beginCell()
-          .storeUint(OP.TON_SIMPLE_OFFER & OP_MASK, 28)
-          .storeAddress(domainAddr)
-          .storeCoins(toNano(String(params.offer_ton)))
-          .storeUint(validUntil, 32)
-          .endCell();
-
-        // Total value = offer + deploy fee + gas
-        const value = toNano(String(params.offer_ton)) + DEPLOY_OFFER + GAS_PURCHASE;
-        const result = await sendTransaction(MARKETPLACE, value, body);
-
-        return {
-          success: true,
-          data: {
-            ...result,
-            message: `Offer of ${params.offer_ton} TON submitted for domain ${params.domain_address}, valid for ${validDays} days. Funds locked in offer contract.`,
-          },
-        };
-      } catch (err) {
-        return { success: false, error: err.message };
-      }
-    },
-  },
-
-  // ── 6. webdom_cancel_deal ───────────────────────────────────────────────
+  // ── 5. webdom_cancel_deal ───────────────────────────────────────────────
   {
     name: "webdom_cancel_deal",
     description:
@@ -468,10 +496,10 @@ export const actionTools = [
       try {
         const dealAddr = parseAddress(params.deal_address, "deal_address");
 
-        // Cancel body: simple text comment "cancel"
+        // nft_sale_v2 cancel: op=3, query_id=0
         const body = beginCell()
-          .storeUint(0, 32)
-          .storeStringTail("cancel")
+          .storeUint(OP_CANCEL, 32)
+          .storeUint(0, 64)
           .endCell();
 
         const result = await sendTransaction(dealAddr, GAS_CANCEL, body);
@@ -484,6 +512,7 @@ export const actionTools = [
           },
         };
       } catch (err) {
+        _log?.error("[webdom]", this?.name || "action", "failed:", err.message, err.stack);
         return { success: false, error: err.message };
       }
     },
@@ -524,7 +553,7 @@ export const actionTools = [
     },
     execute: async (params) => {
       try {
-        if (params.bid_ton <= 0) {
+        if (!Number.isFinite(params.bid_ton) || params.bid_ton <= 0) {
           return { success: false, error: "bid_ton must be positive" };
         }
         if (!params.domain_name && !params.domain_nft_address) {
@@ -558,7 +587,8 @@ export const actionTools = [
 
         // Send bid = TON directly to the domain NFT address
         const value = toNano(String(params.bid_ton));
-        const result = await sendTransaction(nftAddress, value, null);
+        const body = beginCell().endCell();
+        const result = await sendTransaction(nftAddress, value, body);
 
         const domainLabel = params.domain_name
           ? params.domain_name.replace(/\.ton$/i, "") + ".ton"
@@ -575,8 +605,10 @@ export const actionTools = [
           },
         };
       } catch (err) {
+        _log?.error("[webdom]", this?.name || "action", "failed:", err.message, err.stack);
         return { success: false, error: err.message };
       }
     },
   },
-];
+];  // end return
+};  // end actionTools(sdk)
