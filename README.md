@@ -62,6 +62,11 @@ cp -r teleton-plugins/plugins/example ~/.teleton/plugins/
 # 3. Restart Teleton — the plugin loads automatically
 ```
 
+### GroypFi Perps & Groypad Integration (MCP)
+
+See [docs/groypfi-mcp.md](docs/groypfi-mcp.md) for full setup instructions.
+AI agents can now trade perpetuals and launch tokens on Groypad via the official GroypFi MCP server.
+
 No build step. Just copy and go. Plugins with npm dependencies are auto-installed at startup.
 
 ## Available Plugins
