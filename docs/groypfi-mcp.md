@@ -1,19 +1,95 @@
-# teleton-plugin
+# GroypFi Groypad Plugin for Teleton Agent
 
-This section documents the Teleton plugin integration for GroypFi products on TON.
+> Enable AI agents to deploy and trade tokens on **Groypad** — a bonding-curve memecoin launchpad on **TON**.
 
-## Files
+**Website:** [https://groypfi.io](https://groypfi.io)  
+**Docs:** [https://groypfi.io/docs/groypad](https://groypfi.io/docs/groypad)  
+**Telegram Bot:** [@groypfi_bot](https://t.me/groypfi_bot)  
+**DefiLlama:** [https://defillama.com/protocol/fees/groypfi](https://defillama.com/protocol/fees/groypfi)
 
-- `plugins/groypfi-groypad.js` (Groypad launchpad integration)
+---
 
-## Installation
+## Quick Start
 
-1. Copy the plugin file into your Teleton `plugins/` directory.
-2. Set `API_KEY` in the plugin.
-3. Restart Teleton.
+1. Copy `groypfi-groypad.js` into your Teleton `plugins/` directory
+2. Set your API key (see [Configuration](#configuration))
+3. Restart Teleton
 
-## `plugins/groypfi-groypad.js`
+---
 
+## Tools
+
+| Tool | Description | Key Parameters |
+|------|-------------|----------------|
+| `groypad_deploy` | Deploy a new memecoin on the bonding curve | `name`, `ticker`, `description`, `initial_buy_ton`, `image_url` (required) |
+| `groypad_list_tokens` | List active tokens with market cap, progress, volume | — |
+| `groypad_token_info` | Get on-chain bonding curve data (price, supply, progress) | `address` |
+| `groypad_get_quote` | Preview buy/sell quote without executing | `address`, `side`, `amount` |
+| `groypad_buy` | Buy tokens on the bonding curve | `address`, `amount_ton`, `slippage` |
+| `groypad_sell` | Sell tokens back to the bonding curve | `address`, `amount` |
+| `groypad_claim_fee` | Claim accumulated creator trading fees | `address` |
+
+---
+
+## Examples
+
+```
+Agent: "Deploy a new token called Pepe with ticker PEPE and 20 TON initial buy"
+→ groypad_deploy({ name: "Pepe", ticker: "PEPE", description: "The original meme frog", initial_buy_ton: 20, image_url: "https://example.com/pepe.png" })
+
+Agent: "How many tokens would I get for 10 TON?"
+→ groypad_get_quote({ address: "EQ...", side: "buy", amount: 10 })
+
+Agent: "Buy 5 TON worth of $PEPE on Groypad"
+→ groypad_buy({ address: "EQ...", amount_ton: 5, slippage: 5 })
+
+Agent: "Sell all my tokens"
+→ groypad_sell({ address: "EQ...", amount: 1000000 })
+
+Agent: "Claim my creator fees"
+→ groypad_claim_fee({ address: "EQ..." })
+```
+
+---
+
+## Configuration
+
+### API Key
+
+Set your Supabase anon key in the plugin file:
+
+```javascript
+// Option 1: Teleton secret manager (recommended)
+const API_KEY = secrets.get("GROYPAD_API_KEY");
+
+// Option 2: Inline
+const API_KEY = "<YOUR_SUPABASE_ANON_KEY>";
+```
+
+### Endpoints
+
+| Endpoint | URL |
+|----------|-----|
+| Supabase REST | `https://rcuesqclhdghrqrmwjlk.supabase.co` |
+| Edge Functions | `https://rcuesqclhdghrqrmwjlk.supabase.co/functions/v1` |
+
+---
+
+## Contract Reference
+
+| Item | Value |
+|------|-------|
+| MemeFactory | `EQAO4cYqithwdltzmrlal1L5JKLK5Xk76feAJq0VoBC6Fy8T` |
+| Deploy opcode | `0x6ff416dc` → MemeFactory |
+| Buy opcode | `0x742b36d8` → Meme (jetton master) |
+| Sell opcode | `0x595f07bc` → MemeWallet (user jetton wallet) |
+| Claim fee opcode | `0xad7269a8` → Meme (jetton master) |
+| Graduation target | 1,050 TON |
+| Minimum initial buy | 10 TON |
+
+---
+
+## Plugin File
 ```javascript
 // plugins/groypfi-groypad.js — Teleton plugin for Groypad (Bonding Curve Launchpad on TON)
 // Repository: https://github.com/TONresistor/teleton-agent
@@ -550,54 +626,25 @@ module.exports = {
 };
 ```
 
-# mcp-plugin
+---
 
-This section provides MCP-oriented setup guidance for the GroypFi integration and links.
+## Requirements
 
-## GroypFi Plugins for Teleton Agent
+- Teleton Agent v0.5+
+- Built-in TON wallet (no external dependencies)
 
-Enable AI agents to launch and trade tokens on **Groypad** (bonding-curve launchpad) on **TON**.
+---
 
-- Website: https://groypfi.io
-- Docs: https://groypfi.io/docs/groypad
-- Telegram Bot: https://t.me/groypfi_bot
-- DefiLlama: https://defillama.com/protocol/fees/groypfi
+## License
 
-### Quick Start
+MIT — see [LICENSE](./LICENSE)
 
-1. Copy `groypfi-groypad.js` into your Teleton `plugins/` directory.
-2. Set your API key in the file.
-3. Restart Teleton.
+---
 
-### Configuration
+## Links
 
-Use either:
-
-```javascript
-// Option 1: Teleton secret manager (recommended)
-const API_KEY = secrets.get("GROYPAD_API_KEY");
-
-// Option 2: Inline
-const API_KEY = "<YOUR_SUPABASE_ANON_KEY>";
-```
-
-### Endpoints
-
-- Supabase REST: `https://rcuesqclhdghrqrmwjlk.supabase.co`
-- Edge Functions: `https://rcuesqclhdghrqrmwjlk.supabase.co/functions/v1`
-
-### Contract Reference
-
-- MemeFactory: `EQAO4cYqithwdltzmrlal1L5JKLK5Xk76feAJq0VoBC6Fy8T`
-- Deploy opcode: `0x6ff416dc`
-- Buy opcode: `0x742b36d8`
-- Sell opcode: `0x595f07bc`
-- Claim fee opcode: `0xad7269a8`
-- Graduation target: `1,050 TON`
-- Minimum initial buy: `10 TON`
-
-All transaction building and integration logic can be handled server-side by Edge Functions. Plugins only need `fetch` and Teleton's built-in `ton` context.
-
-### License
-
-MIT (GroypFi plugin package)
+- **GroypFi App:** [https://groypfi.io](https://groypfi.io)
+- **Groypad Docs:** [https://groypfi.io/docs/groypad](https://groypfi.io/docs/groypad)
+- **Telegram Bot:** [https://t.me/groypfi_bot](https://t.me/groypfi_bot)
+- **DefiLlama:** [https://defillama.com/protocol/fees/groypfi](https://defillama.com/protocol/fees/groypfi)
+- **DYOR Ranking:** [https://dyor.io/dapps/trade/groypfi](https://dyor.io/dapps/trade/groypfi)
