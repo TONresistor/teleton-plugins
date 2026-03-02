@@ -158,6 +158,38 @@ The `context` object is still available in `execute` — the SDK is an addition,
 | `fromNano(amount)` | `string` — converts nanoTON to TON | — |
 | `validateAddress(address)` | `boolean` — checks if a TON address is valid | — |
 
+**Jetton analytics:**
+
+| Method | Returns | Throws |
+|--------|---------|--------|
+| `getJettonPrice(jettonAddress)` | `JettonPrice \| null` — USD/TON price + 24h/7d/30d changes | — |
+| `getJettonHolders(jettonAddress, limit?)` | `JettonHolder[]` — top holders, max 100 | — |
+| `getJettonHistory(jettonAddress)` | `JettonHistory \| null` — volume, FDV, market cap | — |
+
+**DEX — `sdk.ton.dex`:**
+
+| Method | Returns | Throws |
+|--------|---------|--------|
+| `quote({ fromAsset, toAsset, amount, slippage? })` | `DexQuoteResult` — compares STON.fi + DeDust | — |
+| `quoteSTONfi(params)` | `DexSingleQuote \| null` | — |
+| `quoteDeDust(params)` | `DexSingleQuote \| null` | — |
+| `swap({ fromAsset, toAsset, amount, slippage?, dex? })` | `DexSwapResult` — auto-selects best DEX | `WALLET_NOT_INITIALIZED`, `OPERATION_FAILED` |
+| `swapSTONfi(params)` | `DexSwapResult` | `WALLET_NOT_INITIALIZED`, `OPERATION_FAILED` |
+| `swapDeDust(params)` | `DexSwapResult` | `WALLET_NOT_INITIALIZED`, `OPERATION_FAILED` |
+
+**DNS — `sdk.ton.dns`:**
+
+| Method | Returns | Throws |
+|--------|---------|--------|
+| `check(domain)` | `DnsCheckResult` — availability, owner, auction status | — |
+| `resolve(domain)` | `DnsResolveResult \| null` — wallet address | — |
+| `getAuctions(limit?)` | `DnsAuction[]` — active auctions | — |
+| `startAuction(domain)` | `DnsAuctionResult` — ~0.06 TON min bid | `WALLET_NOT_INITIALIZED`, `OPERATION_FAILED` |
+| `bid(domain, amount)` | `DnsBidResult` | `WALLET_NOT_INITIALIZED`, `OPERATION_FAILED` |
+| `link(domain, address)` | `void` | `WALLET_NOT_INITIALIZED`, `OPERATION_FAILED` |
+| `unlink(domain)` | `void` | `WALLET_NOT_INITIALIZED`, `OPERATION_FAILED` |
+| `setSiteRecord(domain, adnlAddress)` | `void` — set TON Site ADNL record | `WALLET_NOT_INITIALIZED`, `OPERATION_FAILED` |
+
 Read methods return `null` or `[]` on failure. Write methods throw `PluginSDKError`.
 
 ### sdk.telegram — Telegram messaging
@@ -177,6 +209,9 @@ Read methods return `null` or `[]` on failure. Write methods throw `PluginSDKErr
 | `searchMessages(chatId, query, limit?)`       | `SimpleMessage[]`                              | —                                          |
 | `getReplies(chatId, messageId, limit?)`       | `SimpleMessage[]`                              | —                                          |
 | `scheduleMessage(chatId, text, scheduleDate)`  | `number` — message ID                          | `BRIDGE_NOT_CONNECTED`, `OPERATION_FAILED` |
+| `getScheduledMessages(chatId)`                | `SimpleMessage[]`                              | —                                          |
+| `deleteScheduledMessage(chatId, messageId)`   | `void`                                         | `BRIDGE_NOT_CONNECTED`, `OPERATION_FAILED` |
+| `sendScheduledNow(chatId, messageId)`         | `void`                                         | `BRIDGE_NOT_CONNECTED`, `OPERATION_FAILED` |
 | `getMe()`                                     | `{ id, username?, firstName?, isBot } \| null` | —                                          |
 | `isAvailable()`                               | `boolean`                                      | —                                          |
 | `getRawClient()`                              | GramJS `TelegramClient \| null` — escape hatch  | —                                          |
@@ -206,7 +241,10 @@ Read methods return `null` or `[]` on failure. Write methods throw `PluginSDKErr
 | `createQuiz(chatId, question, answers, correctIndex, explanation?)` | `number` — message ID | `BRIDGE_NOT_CONNECTED`, `OPERATION_FAILED` |
 | `banUser(chatId, userId)` | `void` | `BRIDGE_NOT_CONNECTED`, `OPERATION_FAILED` |
 | `unbanUser(chatId, userId)` | `void` | `BRIDGE_NOT_CONNECTED`, `OPERATION_FAILED` |
-| `muteUser(chatId, userId, untilDate?)` | `void` | `BRIDGE_NOT_CONNECTED`, `OPERATION_FAILED` |
+| `muteUser(chatId, userId, untilDate)` | `void` — untilDate is Unix timestamp, 0 = forever | `BRIDGE_NOT_CONNECTED`, `OPERATION_FAILED` |
+| `kickUser(chatId, userId)` | `void` — ban + immediate unban | `BRIDGE_NOT_CONNECTED`, `OPERATION_FAILED` |
+| `getDialogs(limit?)` | `Dialog[]` — max 100 | — |
+| `getHistory(chatId, limit?)` | `SimpleMessage[]` — max 100 | — |
 
 **Stars & gifts:**
 
@@ -216,8 +254,20 @@ Read methods return `null` or `[]` on failure. Write methods throw `PluginSDKErr
 | `sendGift(userId, giftId, opts?)` | `void` | `BRIDGE_NOT_CONNECTED`, `OPERATION_FAILED` |
 | `getAvailableGifts()` | `StarGift[]` | `BRIDGE_NOT_CONNECTED`, `OPERATION_FAILED` |
 | `getMyGifts(limit?)` | `ReceivedGift[]` | `BRIDGE_NOT_CONNECTED`, `OPERATION_FAILED` |
-| `getResaleGifts(limit?)` | `StarGift[]` | `BRIDGE_NOT_CONNECTED`, `OPERATION_FAILED` |
+| `getResaleGifts(giftId, limit?)` | `StarGift[]` | `BRIDGE_NOT_CONNECTED`, `OPERATION_FAILED` |
 | `buyResaleGift(giftId)` | `void` | `BRIDGE_NOT_CONNECTED`, `OPERATION_FAILED` |
+| `getStarsTransactions(limit?)` | `StarsTransaction[]` | `BRIDGE_NOT_CONNECTED`, `OPERATION_FAILED` |
+
+**Collectibles & NFT gifts:**
+
+| Method | Returns | Throws |
+|--------|---------|--------|
+| `transferCollectible(msgId, toUserId)` | `TransferResult` | `BRIDGE_NOT_CONNECTED`, `OPERATION_FAILED` |
+| `setCollectiblePrice(msgId, price)` | `void` — 0 to unlist | `BRIDGE_NOT_CONNECTED`, `OPERATION_FAILED` |
+| `getCollectibleInfo(slug)` | `CollectibleInfo \| null` | — |
+| `getUniqueGift(slug)` | `UniqueGift \| null` | — |
+| `getUniqueGiftValue(slug)` | `GiftValue \| null` | — |
+| `sendGiftOffer(userId, giftSlug, price, opts?)` | `void` | `BRIDGE_NOT_CONNECTED`, `OPERATION_FAILED` |
 
 **Stories:**
 
@@ -340,6 +390,50 @@ sdk.log.warn("low funds");  // ⚠️ [my-plugin] low funds
 sdk.log.error("failed");    // ❌ [my-plugin] failed
 sdk.log.debug("details");   // 🔍 [my-plugin] details  (only if DEBUG or VERBOSE env)
 ```
+
+### sdk.bot — Inline mode
+
+Enables inline query and callback button handling. Requires `bot` in manifest:
+
+```js
+export const manifest = {
+  name: "my-bot",
+  version: "1.0.0",
+  bot: { inline: true, callbacks: true, rateLimits: { inlinePerMinute: 30, callbackPerMinute: 60 } },
+};
+```
+
+`sdk.bot` is `null` unless the manifest declares `bot` capabilities.
+
+| Property / Method | Returns | Description |
+|-------------------|---------|-------------|
+| `isAvailable` | `boolean` | Whether bot client is connected (getter) |
+| `username` | `string` | Bot username (getter) |
+| `onInlineQuery(handler)` | `void` | Register inline query handler |
+| `onCallback(pattern, handler)` | `void` | Register callback handler (glob pattern) |
+| `onChosenResult(handler)` | `void` | Handle chosen inline results |
+| `editInlineMessage(id, text, opts?)` | `Promise<void>` | Edit inline message (GramJS → Grammy fallback) |
+| `keyboard(rows)` | `BotKeyboard` | Build keyboard with auto-prefixed callbacks |
+
+```js
+sdk.bot.onInlineQuery(async (ctx) => {
+  return [{ id: "1", type: "article", title: ctx.query, content: { text: ctx.query } }];
+});
+
+sdk.bot.onCallback("pick:*", async (ctx) => {
+  await ctx.answer("Selected!");
+  await ctx.editMessage("Done!");
+});
+
+const kb = sdk.bot.keyboard([
+  [{ text: "Buy", callback: "buy", style: "success" }],
+  [{ text: "Cancel", callback: "cancel", style: "danger" }],
+]);
+// kb.toTL()     — GramJS (colored buttons)
+// kb.toGrammy() — Grammy Bot API (standard buttons)
+```
+
+Button styles: `"success"` (green), `"danger"` (red), `"primary"` (blue) — GramJS only, graceful fallback.
 
 ### Error handling with SDK
 
