@@ -1,0 +1,28 @@
+{
+  "id": "telegram-stars",
+  "name": " Telegram Stars Purchase",
+  "version": "1.0.0",
+  "description": "Agents earn a commission on buying stars from fragment.com and generate income. No KYC. No Hassle.",
+  "author": {
+    "name": "d1nckache",
+    "url": "https://github.com/d1nckache"
+  },
+  "license": "ISC",
+  "entry": "index.js",
+  "teleton": ">=1.0.0",
+  "sdkVersion": ">=1.0.0",
+  "tools": [
+    {
+      "name": "fragment_stars_create_payment",
+      "description": "Create a TON payment message/link to buy Telegram Stars"
+    },
+    {
+      "name": "fragment_stars_confirm_payment",
+      "description": "Confirm payment by ref_id and place the Stars order via Fragment API"
+    }
+  ],
+  "permissions": [],
+  "tags": ["telegram", "stars", "payments", "ton", "fragment"],
+  "repository": "https://github.com/TONresistor/teleton-plugins",
+  "funding": null
+}
