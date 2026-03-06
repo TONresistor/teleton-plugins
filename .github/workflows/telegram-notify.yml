@@ -1,0 +1,52 @@
+name: Telegram Notify
+
+on:
+  push:
+    branches: [main]
+
+jobs:
+  notify:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Split commit message
+        id: msg
+        run: |
+          FULL="${{ github.event.head_commit.message }}"
+          TITLE=$(echo "$FULL" | head -1)
+          BODY=$(echo "$FULL" | tail -n +3)
+          echo "title=$TITLE" >> "$GITHUB_OUTPUT"
+          {
+            echo "body<<EOF"
+            echo "$BODY"
+            echo "EOF"
+          } >> "$GITHUB_OUTPUT"
+
+      - name: Build message
+        id: fmt
+        run: |
+          BODY="${{ steps.msg.outputs.body }}"
+          if [ -n "$BODY" ]; then
+            MSG="📦 <b>[plugins] ${{ steps.msg.outputs.title }}</b>
+
+          $BODY
+
+          <a href=\"${{ github.event.head_commit.url }}\">View commit</a>"
+          else
+            MSG="📦 <b>[plugins] ${{ steps.msg.outputs.title }}</b>
+
+          <a href=\"${{ github.event.head_commit.url }}\">View commit</a>"
+          fi
+          {
+            echo "text<<EOF"
+            echo "$MSG"
+            echo "EOF"
+          } >> "$GITHUB_OUTPUT"
+
+      - name: Send to Telegram
+        uses: appleboy/telegram-action@master
+        with:
+          to: ${{ secrets.TELEGRAM_CHAT_ID }}
+          token: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          format: html
+          disable_web_page_preview: true
+          message: ${{ steps.fmt.outputs.text }}

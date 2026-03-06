@@ -51,6 +51,16 @@ Teleton loads every folder from `~/.teleton/plugins/` at startup. Each plugin ex
 
 ## Quick Start
 
+### Option 1 — WebUI Marketplace (recommended)
+
+```bash
+teleton start --webui
+```
+
+Open the WebUI in your browser, go to **Plugins** > **Marketplace** tab, and install any community plugin with one click. No manual copy, no git clone — browse, install, done.
+
+### Option 2 — Manual install
+
 ```bash
 # 1. Create the plugins directory
 mkdir -p ~/.teleton/plugins
@@ -125,133 +135,568 @@ No build step. Just copy and go. Plugins with npm dependencies are auto-installe
 
 ## Build Your Own
 
-Three files. No build step. No npm install.
+Three files. No build step. ESM only.
 
 ```
 plugins/your-plugin/
-  index.js         # exports tools[] or tools(sdk)
-  manifest.json    # plugin metadata
-  README.md        # documentation
+├── index.js         # exports tools[] or tools(sdk)
+├── manifest.json    # registry metadata (marketplace, discovery)
+└── README.md        # documentation
 ```
 
-**Pattern A** — Simple plugin (no SDK needed):
+### Pattern A — Simple (static array)
+
+For plugins that only call external APIs and return data to the LLM. No TON, no Telegram messaging, no state.
 
 ```js
 // index.js
 export const tools = [
   {
-    name: "hello",
-    description: "Say hello to someone",
+    name: "myplugin_search",
+    description: "Search for something — the LLM reads this to decide when to call the tool",
     parameters: {
       type: "object",
       properties: {
-        name: { type: "string", description: "Who to greet" },
+        query: { type: "string", description: "Search query" },
       },
-      required: ["name"],
+      required: ["query"],
     },
-    execute: async (params) => ({
-      success: true,
-      data: { message: `Hello, ${params.name}!` },
-    }),
+    execute: async (params, context) => {
+      try {
+        const res = await fetch(`https://api.example.com/search?q=${encodeURIComponent(params.query)}`, {
+          signal: AbortSignal.timeout(15_000),
+        });
+        if (!res.ok) return { success: false, error: `API returned ${res.status}` };
+        const data = await res.json();
+        return { success: true, data };
+      } catch (err) {
+        return { success: false, error: String(err.message || err).slice(0, 500) };
+      }
+    },
   },
 ];
 ```
 
-**Pattern B** — Plugin with SDK (TON, Telegram, database):
+### Pattern B — SDK plugin (function)
+
+For plugins that need TON blockchain, Telegram messaging, database, inline bot mode, or secrets. Export `tools` as a **function** that receives the SDK, and add an inline `manifest` for runtime config:
 
 ```js
 // index.js
+export const manifest = {
+  name: "my-plugin",
+  version: "1.0.0",
+  sdkVersion: ">=1.0.0",
+  description: "What this plugin does",
+  defaultConfig: { threshold: 50 },
+  // bot: { inline: true, callbacks: true },  // uncomment for inline mode
+};
+
+// Optional: enables sdk.db (isolated SQLite per plugin)
+export function migrate(db) {
+  db.exec(`CREATE TABLE IF NOT EXISTS scores (
+    user_id TEXT PRIMARY KEY,
+    points INTEGER NOT NULL DEFAULT 0
+  )`);
+}
+
 export const tools = (sdk) => [
   {
-    name: "check_balance",
-    description: "Check TON wallet balance",
+    name: "myplugin_balance",
+    description: "Check TON wallet balance and current price",
+    parameters: { type: "object", properties: {} },
+    scope: "dm-only",         // "always" | "dm-only" | "group-only" | "admin-only"
+    category: "data-bearing", // "data-bearing" (reads) | "action" (writes)
     execute: async (params, context) => {
-      const balance = await sdk.ton.getBalance();
-      sdk.log.info(`Balance: ${balance?.balance}`);
-      return { success: true, data: { balance: balance?.balance } };
-    }
-  }
+      try {
+        const balance = await sdk.ton.getBalance();
+        const price = await sdk.ton.getPrice();
+        sdk.log.info(`Balance: ${balance?.balance ?? "unknown"} TON`);
+        return {
+          success: true,
+          data: {
+            balance: balance?.balance,
+            usd: price?.usd,
+          },
+        };
+      } catch (err) {
+        return { success: false, error: String(err.message || err).slice(0, 500) };
+      }
+    },
+  },
 ];
+
+// Optional lifecycle hooks
+export async function start(ctx) { /* ctx.bridge, ctx.db, ctx.config, ctx.pluginConfig, ctx.log */ }
+export async function stop() { /* cleanup timers, connections */ }
 ```
 
 > See [`plugins/example/`](plugins/example/) for Pattern A and [`plugins/example-sdk/`](plugins/example-sdk/) for Pattern B.
 
-**Declaring secrets:**
+### Two manifests
 
-If your plugin needs API keys, declare them in `manifest.json` with the exact environment variable name:
+Plugins have **two** manifest sources with different roles:
+
+| File | Purpose | Required |
+|------|---------|----------|
+| `manifest.json` | Registry & marketplace (discovery, listing, metadata) | **Yes** |
+| `export const manifest` in `index.js` | Runtime config (SDK version, defaults, secrets, bot) | Only for Pattern B |
+
+**manifest.json** (for registry):
 
 ```json
-"secrets": {
-  "api_key": { "env": "MYPLUGIN_API_KEY", "required": true, "description": "API key for MyService" },
-  "webhook_secret": { "env": "MYPLUGIN_WEBHOOK_SECRET", "required": false, "description": "Optional webhook signing secret" }
+{
+  "id": "my-plugin",
+  "name": "My Plugin",
+  "version": "1.0.0",
+  "description": "One-line description",
+  "author": { "name": "your-name", "url": "https://github.com/your-name" },
+  "license": "MIT",
+  "entry": "index.js",
+  "teleton": ">=1.0.0",
+  "tools": [{ "name": "myplugin_balance", "description": "Check TON balance" }],
+  "permissions": [],
+  "tags": ["defi", "ton"]
 }
 ```
 
-Users can then configure secrets via:
-- **Environment variable**: `MYPLUGIN_API_KEY=sk-xxx` (Docker, CI)
-- **WebUI**: Plugins → Manage Secrets (auto-prompted on install)
-- **Telegram**: `/plugin set myplugin api_key sk-xxx`
+Add `"sdkVersion": ">=1.0.0"` for Pattern B plugins. Add `"secrets"` if your plugin needs API keys (see below).
 
-In your plugin code: `sdk.secrets.require("api_key")` or `sdk.secrets.get("api_key")`.
+### Secrets
 
-**Submission checklist:**
+Declare secrets in `manifest.json` so users know what to configure:
 
-- [ ] Three files: `index.js`, `manifest.json`, `README.md`
-- [ ] `manifest.json` has all required fields (`id`, `name`, `description`, `version`, `author`)
-- [ ] Tool names are prefixed with the plugin name (e.g. `myplugin_action`)
-- [ ] `sdkVersion` declared in manifest if using the SDK
-- [ ] Secrets declared with `env` field if the plugin needs API keys
-- [ ] Tested locally (see below)
-- [ ] Added to `registry.json`
+```json
+"secrets": {
+  "api_key": { "required": true, "description": "API key for the service" },
+  "webhook_url": { "required": false, "description": "Optional webhook endpoint" }
+}
+```
 
-**Test locally:**
+**Env var naming is automatic** — derived from plugin name + key:
+- Plugin `my-plugin`, key `api_key` → env var `MY_PLUGIN_API_KEY`
+- Convention: plugin name uppercased, hyphens → underscores, then `_KEY_UPPERCASE`
+
+Users can set secrets via:
+- **Environment variable**: `MY_PLUGIN_API_KEY=sk-xxx` (Docker, CI)
+- **WebUI**: Plugins → Manage Secrets
+- **Telegram**: `/plugin set my-plugin api_key sk-xxx`
+
+In code: `sdk.secrets.require("api_key")` (throws if missing) or `sdk.secrets.get("api_key")` (returns `undefined`).
+
+### npm dependencies
+
+Plugins can have their own npm packages beyond what Teleton provides (`@ton/core`, `@ton/ton`, `@ton/crypto`, `telegram`):
 
 ```bash
-# Verify your plugin loads without errors
-node -e "import('./plugins/your-plugin/index.js').then(m => console.log('OK:', typeof m.tools === 'function' ? m.tools.length + ' (sdk)' : m.tools.length + ' tools'))"
+cd plugins/your-plugin
+npm init -y
+npm install some-package
+# Commit BOTH package.json AND package-lock.json (lockfile is required)
+```
 
-# Or copy to Teleton and restart
+Teleton auto-installs deps at startup via `npm ci --ignore-scripts`. Use the dual-require pattern for CJS packages:
+
+```js
+import { createRequire } from "node:module";
+import { realpathSync } from "node:fs";
+
+const _require = createRequire(realpathSync(process.argv[1]));       // core deps
+const _pluginRequire = createRequire(import.meta.url);                // plugin-local deps
+
+const { Address } = _require("@ton/core");                           // from teleton runtime
+const { getHttpEndpoint } = _pluginRequire("@orbs-network/ton-access"); // from plugin node_modules
+```
+
+### Test locally
+
+```bash
+# Pattern A — verify tools load
+node -e "import('./plugins/your-plugin/index.js').then(m => console.log(m.tools.length, 'tools'))"
+
+# Pattern B — verify tools is a function
+node -e "import('./plugins/your-plugin/index.js').then(m => console.log(typeof m.tools === 'function' ? 'SDK plugin OK' : m.tools.length + ' tools'))"
+
+# Live test — copy and restart
 cp -r plugins/your-plugin ~/.teleton/plugins/
 ```
 
-**Submit your plugin:**
+Check the console output after restart:
+```
+Plugin "my-plugin": 3 tools registered    ← success
+Plugin "my-plugin": no 'tools' exported   ← missing export
+Plugin "my-plugin" failed to load: ...    ← syntax error
+```
+
+### Submission checklist
+
+- [ ] Three files: `index.js`, `manifest.json`, `README.md`
+- [ ] `manifest.json` has `id`, `name`, `version`, `description`, `author`, `tools`
+- [ ] Tool names are `snake_case`, prefixed with plugin name (e.g. `myplugin_action`)
+- [ ] `sdkVersion` declared in both manifests if using Pattern B
+- [ ] Secrets declared with `required` + `description` (no `env` field needed — auto-derived)
+- [ ] All `fetch()` calls use `AbortSignal.timeout(15_000)`
+- [ ] All `execute` functions have try/catch and return `{ success, data/error }`
+- [ ] Error messages sliced to 500 chars: `String(err.message || err).slice(0, 500)`
+- [ ] Tested locally (see above)
+- [ ] Added to `registry.json`
+
+### Submit
 
 1. Fork this repo
-2. Create `plugins/your-plugin/` with the three files above
+2. Create `plugins/your-plugin/` with the three files
 3. Add your plugin to `registry.json`
 4. Open a PR
 
-Full guide — manifest format, context API, best practices: **[CONTRIBUTING.md](CONTRIBUTING.md)**
+Full guide — manifest fields, context API, lifecycle hooks, best practices: **[CONTRIBUTING.md](CONTRIBUTING.md)**
 
 ## Plugin SDK
 
-The SDK gives your plugin access to TON, Telegram, secrets, storage, and more — without touching any internals.
+> **[@teleton-agent/sdk](https://github.com/TONresistor/teleton-agent/tree/main/packages/sdk)** — full TypeScript types, interfaces, and API reference
+
+The SDK gives your plugin access to TON blockchain, Telegram messaging, inline bot mode, secrets, storage, and more — without touching any internals. Export `tools` as a function to receive it:
+
+```js
+export const tools = (sdk) => [{ execute: async (params, context) => { /* sdk.* available here */ } }];
+```
+
+### Namespaces
 
 | Namespace | What it does |
 |-----------|-------------|
-| `sdk.ton` | Wallet balance, send TON/jettons, NFTs, transactions, payment verification, utilities |
-| `sdk.telegram` | Messages, media (photo/video/voice/file/gif/sticker), polls, moderation, gifts, stories, raw GramJS |
-| `sdk.secrets` | 3-tier secret resolution (ENV → secrets store → pluginConfig) — `get()`, `require()`, `has()` |
-| `sdk.storage` | Key-value store with TTL — no `migrate()` needed |
-| `sdk.db` | Isolated SQLite database per plugin (requires `migrate()` export) |
-| `sdk.log` | Prefixed logger (`info`, `warn`, `error`, `debug`) |
+| [`sdk.ton`](#sdkton--ton-blockchain) | Wallet, balance, send TON/jettons, NFTs, payment verification, jetton analytics |
+| [`sdk.ton.dex`](#sdktondex--dex-aggregator) | STON.fi + DeDust — quotes, swaps, auto-select best DEX |
+| [`sdk.ton.dns`](#sdktondns--ton-domains) | .ton domain check, auctions, bids, link/unlink, ADNL site records |
+| [`sdk.telegram`](#sdktelegram--telegram-messaging) | Messages, media, scheduling, moderation, polls, stars, gifts, collectibles, stories |
+| [`sdk.bot`](#sdkbot--inline-bot-mode) | Inline queries, callback buttons, colored styled keyboards |
+| [`sdk.db`](#sdkdb--isolated-database) | Isolated SQLite per plugin (requires `migrate()` export) |
+| [`sdk.storage`](#sdkstorage--key-value-store) | Key-value store with TTL — no `migrate()` needed |
+| [`sdk.secrets`](#sdksecrets--secret-management) | 3-tier resolution: ENV → secrets store → pluginConfig |
+| `sdk.log` | Prefixed logger — `info()`, `warn()`, `error()`, `debug()` |
 | `sdk.config` | Sanitized app config (no secrets) |
-| `sdk.pluginConfig` | Plugin-specific config with defaults from manifest |
+| `sdk.pluginConfig` | Plugin-specific config merged with `manifest.defaultConfig` |
+
+### `sdk.ton` — TON Blockchain
 
 ```js
-// Send TON, verify payments, send Telegram messages — all through the SDK
-await sdk.ton.sendTON("EQx...", 1.5, "payment for order #42");
-const payment = await sdk.ton.verifyPayment({ amount: 1.5, memo: "order-42" });
-await sdk.telegram.sendMessage(chatId, "Payment received!");
+// Wallet
+const address = sdk.ton.getAddress();                      // string | null
+const balance = await sdk.ton.getBalance(address?);        // { balance, balanceNano } | null
+const price = await sdk.ton.getPrice();                    // { usd, source, timestamp } | null
+const valid = sdk.ton.validateAddress("EQx...");           // boolean
 
-// New: secrets, storage, media, jettons
-const apiKey = await sdk.secrets.require("api_key");
-await sdk.storage.set("last_run", Date.now(), 3600);
-await sdk.telegram.sendPhoto(chatId, buffer, { caption: "Done!" });
-await sdk.ton.sendJetton(jettonMaster, to, amount);
+// Transfers (throw PluginSDKError on failure)
+await sdk.ton.sendTON("EQx...", 1.5, "memo");             // { txRef, amount }
+await sdk.ton.sendJetton(jettonAddr, toAddr, amount);      // { success, seqno }
+
+// Payment verification
+const result = await sdk.ton.verifyPayment({
+  amount: 1.0, memo: "order-42", maxAgeMinutes: 30
+});  // { verified, txHash?, amount?, playerWallet?, error? }
+
+// Jettons & NFTs
+const jettons = await sdk.ton.getJettonBalances();         // JettonBalance[]
+const info = await sdk.ton.getJettonInfo(jettonAddr);      // JettonInfo | null
+const wallet = await sdk.ton.getJettonWalletAddress(owner, jettonAddr); // string | null
+const nfts = await sdk.ton.getNftItems();                  // NftItem[]
+const nft = await sdk.ton.getNftInfo(nftAddr);             // NftItem | null
+const txs = await sdk.ton.getTransactions(addr, 50);       // TonTransaction[]
+
+// Jetton analytics
+const price = await sdk.ton.getJettonPrice(jettonAddr);    // { usd, ton, change24h, change7d, change30d } | null
+const holders = await sdk.ton.getJettonHolders(addr, 100); // JettonHolder[]
+const history = await sdk.ton.getJettonHistory(addr);      // { volume24h, fdv, marketCap } | null
+
+// Utilities
+const nano = sdk.ton.toNano(1.5);                         // bigint
+const ton = sdk.ton.fromNano(1500000000n);                 // "1.5"
 ```
 
-Full SDK reference: **[CONTRIBUTING.md — Plugin SDK](CONTRIBUTING.md#plugin-sdk)**
+### `sdk.ton.dex` — DEX Aggregator
+
+Compares STON.fi and DeDust to find the best rate.
+
+```js
+// Get quotes from both DEXes
+const quote = await sdk.ton.dex.quote({
+  fromAsset: "ton",
+  toAsset: jettonAddress,
+  amount: 10,
+  slippage: 0.01,
+});  // DexQuoteResult — includes recommendation
+
+// Execute swap (auto-selects best DEX)
+const swap = await sdk.ton.dex.swap({
+  fromAsset: "ton",
+  toAsset: jettonAddress,
+  amount: 10,
+  slippage: 0.01,
+});  // DexSwapResult
+
+// Or target a specific DEX
+const stonQuote = await sdk.ton.dex.quoteSTONfi(params);
+const dedustQuote = await sdk.ton.dex.quoteDeDust(params);
+await sdk.ton.dex.swapSTONfi(params);
+await sdk.ton.dex.swapDeDust(params);
+```
+
+### `sdk.ton.dns` — .ton Domains
+
+```js
+const domain = await sdk.ton.dns.check("mybot.ton");       // { available, owner?, auction? }
+const resolved = await sdk.ton.dns.resolve("mybot.ton");   // { address } | null
+const auctions = await sdk.ton.dns.getAuctions(10);        // DnsAuction[]
+
+// Domain management (throw PluginSDKError on failure)
+await sdk.ton.dns.startAuction("mybot.ton");               // ~0.06 TON min bid
+await sdk.ton.dns.bid("mybot.ton", 5.0);
+await sdk.ton.dns.link("mybot.ton", walletAddress);
+await sdk.ton.dns.unlink("mybot.ton");
+await sdk.ton.dns.setSiteRecord("mybot.ton", adnlAddress); // TON Site ADNL record
+```
+
+### `sdk.telegram` — Telegram Messaging
+
+**Messages:**
+
+```js
+const msgId = await sdk.telegram.sendMessage(chatId, "Hello!", {
+  replyToId: 123,
+  inlineKeyboard: [[{ text: "Click me", callback_data: "action" }]],
+});
+await sdk.telegram.editMessage(chatId, msgId, "Updated!");
+await sdk.telegram.deleteMessage(chatId, msgId);
+await sdk.telegram.forwardMessage(fromChat, toChat, msgId);
+await sdk.telegram.pinMessage(chatId, msgId);
+```
+
+**Scheduling:**
+
+```js
+await sdk.telegram.scheduleMessage(chatId, "Reminder!", unixTimestamp);
+const scheduled = await sdk.telegram.getScheduledMessages(chatId);
+await sdk.telegram.sendScheduledNow(chatId, msgId);
+await sdk.telegram.deleteScheduledMessage(chatId, msgId);
+```
+
+**Media:**
+
+```js
+await sdk.telegram.sendPhoto(chatId, filePath, { caption: "Check this!" });
+await sdk.telegram.sendVideo(chatId, filePath);
+await sdk.telegram.sendVoice(chatId, filePath);
+await sdk.telegram.sendFile(chatId, filePath, { caption: "Report" });
+await sdk.telegram.sendGif(chatId, filePath);
+await sdk.telegram.sendSticker(chatId, filePath);
+const buffer = await sdk.telegram.downloadMedia(chatId, msgId); // Buffer | null
+await sdk.telegram.setTyping(chatId);
+```
+
+**Search & history:**
+
+```js
+const messages = await sdk.telegram.getMessages(chatId, 50);
+const results = await sdk.telegram.searchMessages(chatId, "keyword", 20);
+const replies = await sdk.telegram.getReplies(chatId, msgId, 20);
+const dialogs = await sdk.telegram.getDialogs(100);
+const history = await sdk.telegram.getHistory(chatId, 100);
+```
+
+**Social & chat info:**
+
+```js
+const chat = await sdk.telegram.getChatInfo(chatId);
+const user = await sdk.telegram.getUserInfo(userId);
+const resolved = await sdk.telegram.resolveUsername("username");
+const members = await sdk.telegram.getParticipants(chatId, 200);
+const me = await sdk.telegram.getMe();
+```
+
+**Interactive:**
+
+```js
+await sdk.telegram.sendDice(chatId, "🎲");
+await sdk.telegram.sendReaction(chatId, msgId, "👍");
+await sdk.telegram.createPoll(chatId, "Best DEX?", ["STON.fi", "DeDust"]);
+await sdk.telegram.createQuiz(chatId, "1+1=?", ["1", "2", "3"], 1, "It's 2!");
+```
+
+**Moderation:**
+
+```js
+await sdk.telegram.banUser(chatId, userId);
+await sdk.telegram.unbanUser(chatId, userId);
+await sdk.telegram.muteUser(chatId, userId, untilDate); // Unix timestamp, 0 = forever
+await sdk.telegram.kickUser(chatId, userId);             // ban + immediate unban
+```
+
+**Stars & gifts:**
+
+```js
+const stars = await sdk.telegram.getStarsBalance();
+const gifts = await sdk.telegram.getAvailableGifts();
+const myGifts = await sdk.telegram.getMyGifts(50);
+await sdk.telegram.sendGift(userId, giftId, { message: "For you!" });
+const resale = await sdk.telegram.getResaleGifts(giftId, 10);
+await sdk.telegram.buyResaleGift(giftId);
+const txs = await sdk.telegram.getStarsTransactions(50);
+```
+
+**Collectibles:**
+
+```js
+await sdk.telegram.transferCollectible(msgId, toUserId);
+await sdk.telegram.setCollectiblePrice(msgId, 100);       // 0 to unlist
+const info = await sdk.telegram.getCollectibleInfo(slug);
+const unique = await sdk.telegram.getUniqueGift(slug);
+const value = await sdk.telegram.getUniqueGiftValue(slug);
+await sdk.telegram.sendGiftOffer(userId, giftSlug, price);
+```
+
+**Stories & raw client:**
+
+```js
+await sdk.telegram.sendStory(mediaPath, { caption: "New!", pinned: true });
+const client = sdk.telegram.getRawClient(); // GramJS TelegramClient | null
+```
+
+### `sdk.bot` — Inline Bot Mode
+
+Enables `@botname query` inline queries and callback button handling. Requires `bot` in manifest:
+
+```js
+export const manifest = {
+  name: "my-bot",
+  version: "1.0.0",
+  sdkVersion: ">=1.0.0",
+  bot: {
+    inline: true,
+    callbacks: true,
+    rateLimits: { inlinePerMinute: 30, callbackPerMinute: 60 }, // optional
+  },
+};
+
+export const tools = (sdk) => {
+  // Handle inline queries — user types @botname <query>
+  sdk.bot.onInlineQuery(async (ctx) => {
+    return [{
+      id: "1",
+      type: "article",
+      title: `Result: ${ctx.query}`,
+      description: "Tap to send",
+      content: { text: `You searched: ${ctx.query}` },
+      replyMarkup: sdk.bot.keyboard([
+        [{ text: "✓ Yes", callback: "pick:yes", style: "success" }],  // green
+        [{ text: "✗ No", callback: "pick:no", style: "danger" }],     // red
+      ]).toTL(),  // .toTL() = GramJS colored buttons, .toGrammy() = Bot API
+    }];
+  });
+
+  // Handle button presses — glob pattern matching
+  sdk.bot.onCallback("pick:*", async (ctx) => {
+    await ctx.answer("Selected!");        // toast notification
+    await ctx.editMessage("Choice made."); // update the message
+  });
+
+  // Track which inline results users select
+  sdk.bot.onChosenResult(async (ctx) => {
+    sdk.log.info(`User ${ctx.userId} chose ${ctx.resultId}`);
+  });
+
+  return [/* regular tools alongside inline mode */];
+};
+```
+
+Button styles: `"success"` (green), `"danger"` (red), `"primary"` (blue) — colored via GramJS Layer 222, graceful fallback on Bot API.
+
+Properties: `sdk.bot.isAvailable` (boolean), `sdk.bot.username` (string).
+
+> **Important:** `sdk.bot` is `null` unless the manifest declares `bot` capabilities.
+
+### `sdk.db` — Isolated Database
+
+Each plugin gets its own SQLite database. Export `migrate()` to enable it:
+
+```js
+export function migrate(db) {
+  db.exec(`CREATE TABLE IF NOT EXISTS scores (
+    user_id TEXT PRIMARY KEY,
+    points INTEGER NOT NULL DEFAULT 0
+  )`);
+}
+
+// sdk.db is a full better-sqlite3 instance
+sdk.db.prepare("INSERT INTO scores ...").run(userId);
+const row = sdk.db.prepare("SELECT * FROM scores WHERE user_id = ?").get(userId);
+```
+
+If you don't export `migrate`, `sdk.db` is `null`.
+
+### `sdk.storage` — Key-Value Store
+
+No setup needed. Supports TTL (auto-expiry):
+
+```js
+sdk.storage.set("price", 42.5, { ttl: 3_600_000 }); // expires in 1 hour
+const val = sdk.storage.get("price");                 // 42.5 or undefined if expired
+sdk.storage.has("price");                              // boolean
+sdk.storage.delete("price");                           // boolean
+sdk.storage.clear();                                   // delete all keys
+```
+
+### `sdk.secrets` — Secret Management
+
+3-tier resolution: **ENV variable** → **secrets store** → **pluginConfig fallback**.
+
+```js
+const key = sdk.secrets.require("api_key"); // throws SECRET_NOT_FOUND if missing
+const opt = sdk.secrets.get("webhook_url"); // undefined if not set
+sdk.secrets.has("premium_key");             // boolean
+```
+
+Declare in `manifest.json` for validation at load time:
+
+```json
+{ "secrets": { "api_key": { "required": true, "description": "API key for the service" } } }
+```
+
+### Plugin Lifecycle
+
+| Export | When | Purpose |
+|--------|------|---------|
+| `manifest` | Load time | Plugin metadata, `defaultConfig`, `sdkVersion`, `bot` config |
+| `migrate(db)` | Before tools | Database schema setup (enables `sdk.db`) |
+| `tools` / `tools(sdk)` | After migrate | Tool definitions |
+| `start(ctx)` | After Telegram connects | Background tasks, intervals, initialization |
+| `stop()` | On shutdown | Cleanup timers, connections |
+
+### Error Handling
+
+**Read methods** (`getBalance`, `getMessages`, etc.) return `null` or `[]` — never throw.
+
+**Write methods** (`sendTON`, `sendMessage`, `banUser`, etc.) throw `PluginSDKError` with `.code`:
+
+| Code | Meaning |
+|------|---------|
+| `WALLET_NOT_INITIALIZED` | Wallet not set up |
+| `INVALID_ADDRESS` | Bad TON address |
+| `BRIDGE_NOT_CONNECTED` | Telegram not ready |
+| `SECRET_NOT_FOUND` | `sdk.secrets.require()` failed |
+| `OPERATION_FAILED` | Generic failure |
+
+```js
+try {
+  await sdk.ton.sendTON(address, 1.0);
+} catch (err) {
+  if (err.name === "PluginSDKError") {
+    return { success: false, error: `${err.code}: ${err.message}` };
+  }
+  return { success: false, error: String(err.message || err).slice(0, 500) };
+}
+```
+
+> Complete SDK reference with TypeScript types and interfaces: **[@teleton-agent/sdk](https://github.com/TONresistor/teleton-agent/tree/main/packages/sdk)**<br>
+> Contribution guide with best practices and testing: **[CONTRIBUTING.md](CONTRIBUTING.md)**
 
 ## Troubleshooting
 
