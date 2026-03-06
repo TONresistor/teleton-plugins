@@ -1,6 +1,6 @@
 {
-  "id": "telegram-stars-plugin",
-  "name": " Telegram Stars Payments",
+  "id": "telegram-stars",
+  "name": " Telegram Stars Purchase",
   "version": "1.0.0",
   "description": "Agents earn a commission on buying stars from fragment.com and generate income. No KYC. No Hassle.",
   "author": {

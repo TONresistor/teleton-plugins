@@ -87,11 +87,28 @@ function requireApiTokenFromSdk(sdk) {
   );
 }
 
+function logContext(data) {
+  try {
+    return JSON.stringify(data);
+  } catch {
+    return String(data);
+  }
+}
+
 async function fragmentApiPost(sdk, path, payload) {
   const baseUrl = getStarsBaseUrlFromSdk(sdk);
   const url = `${baseUrl}${path.startsWith("/") ? "" : "/"}${path}`;
   const timeoutMs = getApiTimeoutMsFromSdk(sdk);
   const token = requireApiTokenFromSdk(sdk);
+
+  sdk.log?.debug(
+    `[fragment_api.request] ${logContext({
+      path,
+      url,
+      timeoutMs,
+      ref_id: payload?.ref_id ?? null,
+    })}`,
+  );
 
   const res = await fetch(url, {
     method: "POST",
@@ -108,6 +125,13 @@ async function fragmentApiPost(sdk, path, payload) {
   try {
     parsed = rawText ? JSON.parse(rawText) : {};
   } catch {
+    sdk.log?.warn(
+      `[fragment_api.non_json] ${logContext({
+        path,
+        status: res.status,
+        ref_id: payload?.ref_id ?? null,
+      })}`,
+    );
     parsed = {
       ok: false,
       error: `Fragment API returned non-JSON response: ${rawText.slice(0, 200)}`,
@@ -116,10 +140,27 @@ async function fragmentApiPost(sdk, path, payload) {
 
   if (!res.ok) {
     const detail = parsed?.detail || parsed?.error || rawText || `HTTP ${res.status}`;
+    sdk.log?.warn(
+      `[fragment_api.error] ${logContext({
+        path,
+        status: res.status,
+        ref_id: payload?.ref_id ?? null,
+        detail: String(detail).slice(0, 200),
+      })}`,
+    );
     throw new Error(
       `Fragment API request failed (${res.status}): ${String(detail).slice(0, 500)}`,
     );
   }
+
+  sdk.log?.debug(
+    `[fragment_api.response] ${logContext({
+      path,
+      status: res.status,
+      ref_id: payload?.ref_id ?? null,
+      ok: parsed?.ok ?? null,
+    })}`,
+  );
 
   return parsed;
 }
@@ -328,6 +369,10 @@ async function pollOrderInBackground(sdk, refId, chatId, messageId, lang) {
     await sdk.telegram.sendMessage(chatId, text);
   };
 
+  sdk.log?.info(
+    `[payment_poll.started] ${logContext({ ref_id: refId, chat_id: chatId })}`,
+  );
+
   try {
     while (Date.now() - startedAt < maxDurationMs) {
       let result;
@@ -337,6 +382,9 @@ async function pollOrderInBackground(sdk, refId, chatId, messageId, lang) {
           fee_address: feeAddress ?? undefined,
         });
       } catch {
+        sdk.log?.warn(
+          `[payment_poll.retry] ${logContext({ ref_id: refId, reason: "process_request_failed" })}`,
+        );
         if (Date.now() - lastProgressAt >= progressUpdateEveryMs) {
           lastProgressAt = Date.now();
           await updateText(
@@ -357,6 +405,13 @@ async function pollOrderInBackground(sdk, refId, chatId, messageId, lang) {
           paymentFrom: result?.playerWallet ?? null,
         });
 
+        sdk.log?.info(
+          `[payment_poll.ordered] ${logContext({
+            ref_id: refId,
+            tx_hash: result?.tx_hash ?? null,
+            req_id: result?.req_id ?? null,
+          })}`,
+        );
         await updateText(formatFinalResultMessage(lang, refId, result));
         return;
       }
@@ -377,6 +432,13 @@ async function pollOrderInBackground(sdk, refId, chatId, messageId, lang) {
 
       const errorText = String(result?.error ?? result?.message ?? "unknown error");
       updateOrderStatus(sdk.db, refId, "error", { error: errorText });
+      sdk.log?.warn(
+        `[payment_poll.failed] ${logContext({
+          ref_id: refId,
+          status,
+          error: errorText,
+        })}`,
+      );
 
       await updateText(
         lang === "en"
@@ -386,6 +448,9 @@ async function pollOrderInBackground(sdk, refId, chatId, messageId, lang) {
       return;
     }
 
+    sdk.log?.warn(
+      `[payment_poll.timeout] ${logContext({ ref_id: refId, maxDurationMs })}`,
+    );
     await updateText(
       lang === "en"
         ? `Payment for order ${refId} was not found within 15 minutes.\n` +
@@ -395,6 +460,9 @@ async function pollOrderInBackground(sdk, refId, chatId, messageId, lang) {
     );
   } finally {
     activeChecks.delete(refId);
+    sdk.log?.debug(
+      `[payment_poll.finished] ${logContext({ ref_id: refId })}`,
+    );
   }
 }
 
@@ -466,6 +534,15 @@ export const tools = (sdk) => [
 
         const refId = createRefId(String(context.senderId ?? "unknown"));
         const feeAddress = sdk.ton.getAddress();
+        sdk.log?.info(
+          `[create_payment.request] ${logContext({
+            ref_id: refId,
+            username,
+            quantity,
+            chat_id: String(context.chatId),
+            sender_id: String(context.senderId),
+          })}`,
+        );
         if (!feeAddress) {
           return {
             success: false,
@@ -485,6 +562,9 @@ export const tools = (sdk) => [
             fee_address: feeAddress,
           });
         } catch {
+          sdk.log?.warn(
+            `[create_payment.unavailable] ${logContext({ ref_id: refId, username, quantity })}`,
+          );
           return {
             success: true,
             data: {
@@ -504,6 +584,14 @@ export const tools = (sdk) => [
         }
 
         if (!orderCreate?.ok) {
+          sdk.log?.warn(
+            `[create_payment.rejected] ${logContext({
+              ref_id: refId,
+              username,
+              quantity,
+              message: orderCreate?.message ?? "unknown error",
+            })}`,
+          );
           return {
             success: true,
             data: {
@@ -558,6 +646,15 @@ export const tools = (sdk) => [
         };
 
         upsertOrder(sdk.db, order);
+        sdk.log?.info(
+          `[create_payment.created] ${logContext({
+            ref_id: refId,
+            username,
+            quantity,
+            amount_ton: amountTon,
+            pay_to_address: payToAddress,
+          })}`,
+        );
 
         const labels =
           lang === "en"
@@ -611,6 +708,9 @@ ${labels.fee} - \`${labels.feeValue}\`
           },
         };
       } catch (err) {
+        sdk.log?.error(
+          `[create_payment.exception] ${String(err?.message ?? err).slice(0, 500)}`,
+        );
         return { success: false, error: String(err?.message ?? err).slice(0, 500) };
       }
     },
@@ -656,6 +756,14 @@ ${labels.fee} - \`${labels.feeValue}\`
             : null;
 
         const refId = explicitRefId || inferredOrder?.refId || "";
+        sdk.log?.info(
+          `[confirm_payment.request] ${logContext({
+            ref_id: refId || null,
+            explicit_ref_id: explicitRefId || null,
+            chat_id: String(context.chatId),
+            sender_id: String(context.senderId),
+          })}`,
+        );
         if (!refId) {
           return {
             success: false,
@@ -708,6 +816,9 @@ ${labels.fee} - \`${labels.feeValue}\`
         }
 
         if (activeChecks.has(refId) || order.status === "checking") {
+          sdk.log?.info(
+            `[confirm_payment.already_running] ${logContext({ ref_id: refId })}`,
+          );
           const text =
             lang === "en"
               ? `**Order** - \`${refId}\`\n**Status** - payment check is already running.\n**Next step** - I'll send the result in a separate message.`
@@ -727,6 +838,9 @@ ${labels.fee} - \`${labels.feeValue}\`
         updateOrderStatus(sdk.db, refId, "checking", { error: null });
 
         activeChecks.add(refId);
+        sdk.log?.info(
+          `[confirm_payment.started] ${logContext({ ref_id: refId, chat_id: String(context.chatId) })}`,
+        );
 
         const chatId = String(context.chatId);
         const startMessage =
@@ -747,6 +861,9 @@ ${labels.fee} - \`${labels.feeValue}\`
           },
         };
       } catch (err) {
+        sdk.log?.error(
+          `[confirm_payment.exception] ${String(err?.message ?? err).slice(0, 500)}`,
+        );
         return { success: false, error: String(err?.message ?? err).slice(0, 500) };
       }
     },
