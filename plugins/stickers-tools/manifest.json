@@ -1,0 +1,38 @@
+{
+  "id": "stickers-tools",
+  "name": "Stickers Tools Market Data",
+  "version": "1.0.0",
+  "description": "Telegram sticker NFT market data — stats, floor prices, sales history, charts, burns, digest, search",
+  "author": {
+    "name": "teleton",
+    "url": "https://github.com/TONresistor"
+  },
+  "license": "MIT",
+  "entry": "index.js",
+  "teleton": ">=1.0.0",
+  "sdkVersion": ">=1.0.0",
+  "tools": [
+    { "name": "sticker_search", "description": "Search Telegram Sticker NFTs by name to find collection_id and sticker_id" },
+    { "name": "sticker_summary", "description": "Get complete sticker info: stats, floor prices, recent trades" },
+    { "name": "sticker_stats", "description": "Get overall sticker market statistics" },
+    { "name": "sticker_floor", "description": "Get floor prices by platform for a sticker" },
+    { "name": "sticker_metadata", "description": "Get metadata for a specific sticker" },
+    { "name": "sticker_history", "description": "Get sticker sales history with filtering" },
+    { "name": "sticker_digest", "description": "Get sticker market digest: top movers, burns, price changes" },
+    { "name": "sticker_chart_marketcap", "description": "Get daily market cap chart data" },
+    { "name": "sticker_chart_volume", "description": "Get daily trading volume chart data" },
+    { "name": "sticker_chart_collection_mcap", "description": "Get collection market cap chart" },
+    { "name": "sticker_chart_sales", "description": "Get daily sales chart for a sticker" },
+    { "name": "sticker_burn_history", "description": "Get sticker burn history" },
+    { "name": "sticker_burn_stats", "description": "Get burn statistics summary" },
+    { "name": "sticker_burn_user", "description": "Get burns by a specific user address" },
+    { "name": "sticker_burn_collections", "description": "Get burn stats grouped by collection" },
+    { "name": "sticker_chart_burns", "description": "Get burn chart for a sticker" },
+    { "name": "sticker_burn_statistics", "description": "Get detailed burn rankings" },
+    { "name": "sticker_metadata_all", "description": "Get metadata for all collections (large response)" }
+  ],
+  "permissions": [],
+  "tags": ["market-data", "ton", "stickers", "trading", "api"],
+  "repository": "https://github.com/TONresistor/teleton-plugins",
+  "funding": null
+}

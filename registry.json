@@ -178,6 +178,14 @@
       "path": "plugins/casino"
     },
     {
+      "id": "stickers-tools",
+      "name": "Stickers Tools Market Data",
+      "description": "Telegram sticker NFT market data — stats, floor prices, sales history, charts, burns, digest, search",
+      "author": "teleton",
+      "tags": ["market-data", "ton", "stickers", "trading", "api"],
+      "path": "plugins/stickers-tools"
+    },
+    {
       "id": "boards",
       "name": "boards.ton Forum",
       "description": "Browse and participate in the boards.ton decentralized forum using x402 TON micropayments",
