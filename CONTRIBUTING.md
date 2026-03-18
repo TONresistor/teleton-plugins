@@ -65,6 +65,8 @@ Every plugin must include a `manifest.json` at the root of its folder. This file
 | `permissions` | array        | **Yes**  | Empty array `[]` by default. Add `"bridge"` if the plugin uses `context.bridge` directly. |
 | `secrets`     | object       | No       | Secret declarations — `{ "key": { "required": bool, "description": string } }`. Validated at load time. |
 | `tags`        | array        | No       | Categories for discovery (e.g. `["defi", "ton", "trading"]`).                             |
+| `bot`         | object       | No       | Bot features: `{ inline?: bool, callbacks?: bool, rateLimits?: { inlinePerMinute?, callbackPerMinute? } }` |
+| `hooks`       | array        | No       | Hook declarations: `[{ name: string, priority?: number, description?: string }]`          |
 | `repository`  | string       | No       | URL to the plugin's source repository.                                                    |
 | `funding`     | string\|null | No       | Funding URL or `null`.                                                                    |
 
@@ -143,6 +145,8 @@ The `context` object is still available in `execute` — the SDK is an addition,
 | Method | Returns | Throws |
 |--------|---------|--------|
 | `getAddress()` | `string \| null` — bot's wallet address | — |
+| `getPublicKey()` | `string \| null` — hex ed25519 public key, null if wallet not loaded | — |
+| `getWalletVersion()` | `string` — always `"v5r1"` | — |
 | `getBalance(address?)` | `{ balance, balanceNano } \| null` — defaults to bot's wallet | — |
 | `getPrice()` | `{ usd, source, timestamp } \| null` — TON/USD price | — |
 | `sendTON(to, amount, comment?)` | `{ txRef, amount }` — irreversible transfer | `WALLET_NOT_INITIALIZED`, `INVALID_ADDRESS`, `OPERATION_FAILED` |
@@ -151,46 +155,50 @@ The `context` object is still available in `execute` — the SDK is an addition,
 | `getJettonBalances(address?)` | `JettonBalance[]` — all jetton balances | — |
 | `getJettonInfo(jettonAddress)` | `JettonInfo \| null` — metadata, supply, holders | — |
 | `sendJetton(jettonAddress, to, amount, opts?)` | `{ success, seqno }` | `WALLET_NOT_INITIALIZED`, `INVALID_ADDRESS`, `OPERATION_FAILED` |
+| `createJettonTransfer(jettonAddress, to, amount, opts?)` | `SignedTransfer` — signed TEP-74 BOC without broadcasting | `WALLET_NOT_INITIALIZED`, `OPERATION_FAILED` |
 | `getJettonWalletAddress(ownerAddress, jettonAddress)` | `string \| null` | — |
 | `getNftItems(address?)` | `NftItem[]` — NFTs owned by address | — |
 | `getNftInfo(nftAddress)` | `NftItem \| null` — NFT metadata and collection | — |
 | `toNano(amount)` | `bigint` — converts TON to nanoTON | — |
 | `fromNano(amount)` | `string` — converts nanoTON to TON | — |
 | `validateAddress(address)` | `boolean` — checks if a TON address is valid | — |
-
-**Jetton analytics:**
-
-| Method | Returns | Throws |
-|--------|---------|--------|
-| `getJettonPrice(jettonAddress)` | `JettonPrice \| null` — USD/TON price + 24h/7d/30d changes | — |
-| `getJettonHolders(jettonAddress, limit?)` | `JettonHolder[]` — top holders, max 100 | — |
-| `getJettonHistory(jettonAddress)` | `JettonHistory \| null` — volume, FDV, market cap | — |
-
-**DEX — `sdk.ton.dex`:**
-
-| Method | Returns | Throws |
-|--------|---------|--------|
-| `quote({ fromAsset, toAsset, amount, slippage? })` | `DexQuoteResult` — compares STON.fi + DeDust | — |
-| `quoteSTONfi(params)` | `DexSingleQuote \| null` | — |
-| `quoteDeDust(params)` | `DexSingleQuote \| null` | — |
-| `swap({ fromAsset, toAsset, amount, slippage?, dex? })` | `DexSwapResult` — auto-selects best DEX | `WALLET_NOT_INITIALIZED`, `OPERATION_FAILED` |
-| `swapSTONfi(params)` | `DexSwapResult` | `WALLET_NOT_INITIALIZED`, `OPERATION_FAILED` |
-| `swapDeDust(params)` | `DexSwapResult` | `WALLET_NOT_INITIALIZED`, `OPERATION_FAILED` |
-
-**DNS — `sdk.ton.dns`:**
-
-| Method | Returns | Throws |
-|--------|---------|--------|
-| `check(domain)` | `DnsCheckResult` — availability, owner, auction status | — |
-| `resolve(domain)` | `DnsResolveResult \| null` — wallet address | — |
-| `getAuctions(limit?)` | `DnsAuction[]` — active auctions | — |
-| `startAuction(domain)` | `DnsAuctionResult` — ~0.06 TON min bid | `WALLET_NOT_INITIALIZED`, `OPERATION_FAILED` |
-| `bid(domain, amount)` | `DnsBidResult` | `WALLET_NOT_INITIALIZED`, `OPERATION_FAILED` |
-| `link(domain, address)` | `void` | `WALLET_NOT_INITIALIZED`, `OPERATION_FAILED` |
-| `unlink(domain)` | `void` | `WALLET_NOT_INITIALIZED`, `OPERATION_FAILED` |
-| `setSiteRecord(domain, adnlAddress)` | `void` — set TON Site ADNL record | `WALLET_NOT_INITIALIZED`, `OPERATION_FAILED` |
+| `getJettonPrice(jettonAddress)` | `JettonPrice \| null` — USD/TON price, 24h/7d/30d changes | — |
+| `getJettonHolders(jettonAddress, limit?)` | `JettonHolder[]` — top holders by balance (max 100) | — |
+| `getJettonHistory(jettonAddress)` | `JettonHistory \| null` — volume, FDV, market cap, holders | — |
 
 Read methods return `null` or `[]` on failure. Write methods throw `PluginSDKError`.
+
+`SignedTransfer` shape: `{ signedBoc, walletPublicKey, walletAddress, seqno, validUntil }`. Deprecated aliases `boc`, `publicKey`, and `walletVersion` are also present for backwards compatibility. `opts` for `createJettonTransfer` accepts `{ comment?: string }`.
+
+### sdk.ton.dex — DEX aggregator
+
+Compare and execute swaps across STON.fi and DeDust:
+
+| Method | Returns | Throws |
+|--------|---------|--------|
+| `dex.quote({ fromAsset, toAsset, amount, slippage? })` | `{ stonfi, dedust, recommended, savings }` | `OPERATION_FAILED` |
+| `dex.quoteSTONfi(params)` | `DexSingleQuote \| null` | — |
+| `dex.quoteDeDust(params)` | `DexSingleQuote \| null` | — |
+| `dex.swap({ fromAsset, toAsset, amount, slippage?, dex? })` | `DexSwapResult` | `WALLET_NOT_INITIALIZED`, `OPERATION_FAILED` |
+| `dex.swapSTONfi(params)` | `DexSwapResult` | `WALLET_NOT_INITIALIZED`, `OPERATION_FAILED` |
+| `dex.swapDeDust(params)` | `DexSwapResult` | `WALLET_NOT_INITIALIZED`, `OPERATION_FAILED` |
+
+Assets are jetton master addresses (or `"TON"` for native TON). Slippage defaults to DEX-specific value.
+
+### sdk.ton.dns — TON DNS domains
+
+Manage `.ton` domains — check availability, auctions, linking, and TON Site records:
+
+| Method | Returns | Throws |
+|--------|---------|--------|
+| `dns.check(domain)` | `{ domain, available, owner?, nftAddress? }` | — |
+| `dns.resolve(domain)` | `{ domain, walletAddress, nftAddress, owner } \| null` | — |
+| `dns.getAuctions(limit?)` | `DnsAuction[]` (max 100) | — |
+| `dns.startAuction(domain)` | `{ domain, success, bidAmount }` | `WALLET_NOT_INITIALIZED`, `OPERATION_FAILED` |
+| `dns.bid(domain, amount)` | `{ domain, bidAmount, success }` | `WALLET_NOT_INITIALIZED`, `OPERATION_FAILED` |
+| `dns.link(domain, address)` | `void` | `WALLET_NOT_INITIALIZED`, `OPERATION_FAILED` |
+| `dns.unlink(domain)` | `void` | `WALLET_NOT_INITIALIZED`, `OPERATION_FAILED` |
+| `dns.setSiteRecord(domain, adnlAddress)` | `void` | `WALLET_NOT_INITIALIZED`, `OPERATION_FAILED` |
 
 ### sdk.telegram — Telegram messaging
 
@@ -209,9 +217,11 @@ Read methods return `null` or `[]` on failure. Write methods throw `PluginSDKErr
 | `searchMessages(chatId, query, limit?)`       | `SimpleMessage[]`                              | —                                          |
 | `getReplies(chatId, messageId, limit?)`       | `SimpleMessage[]`                              | —                                          |
 | `scheduleMessage(chatId, text, scheduleDate)`  | `number` — message ID                          | `BRIDGE_NOT_CONNECTED`, `OPERATION_FAILED` |
-| `getScheduledMessages(chatId)`                | `SimpleMessage[]`                              | —                                          |
-| `deleteScheduledMessage(chatId, messageId)`   | `void`                                         | `BRIDGE_NOT_CONNECTED`, `OPERATION_FAILED` |
-| `sendScheduledNow(chatId, messageId)`         | `void`                                         | `BRIDGE_NOT_CONNECTED`, `OPERATION_FAILED` |
+| `getScheduledMessages(chatId)`                 | `SimpleMessage[]`                               | —                                          |
+| `deleteScheduledMessage(chatId, messageId)`    | `void`                                          | `BRIDGE_NOT_CONNECTED`, `OPERATION_FAILED` |
+| `sendScheduledNow(chatId, messageId)`          | `void`                                          | `BRIDGE_NOT_CONNECTED`, `OPERATION_FAILED` |
+| `getDialogs(limit?)`                           | `Dialog[]` — conversations (max 100)            | —                                          |
+| `getHistory(chatId, limit?)`                   | `SimpleMessage[]` — message history (max 100)   | —                                          |
 | `getMe()`                                     | `{ id, username?, firstName?, isBot } \| null` | —                                          |
 | `isAvailable()`                               | `boolean`                                      | —                                          |
 | `getRawClient()`                              | GramJS `TelegramClient \| null` — escape hatch  | —                                          |
@@ -241,10 +251,8 @@ Read methods return `null` or `[]` on failure. Write methods throw `PluginSDKErr
 | `createQuiz(chatId, question, answers, correctIndex, explanation?)` | `number` — message ID | `BRIDGE_NOT_CONNECTED`, `OPERATION_FAILED` |
 | `banUser(chatId, userId)` | `void` | `BRIDGE_NOT_CONNECTED`, `OPERATION_FAILED` |
 | `unbanUser(chatId, userId)` | `void` | `BRIDGE_NOT_CONNECTED`, `OPERATION_FAILED` |
-| `muteUser(chatId, userId, untilDate)` | `void` — untilDate is Unix timestamp, 0 = forever | `BRIDGE_NOT_CONNECTED`, `OPERATION_FAILED` |
+| `muteUser(chatId, userId, untilDate)` | `void` | `BRIDGE_NOT_CONNECTED`, `OPERATION_FAILED` |
 | `kickUser(chatId, userId)` | `void` — ban + immediate unban | `BRIDGE_NOT_CONNECTED`, `OPERATION_FAILED` |
-| `getDialogs(limit?)` | `Dialog[]` — max 100 | — |
-| `getHistory(chatId, limit?)` | `SimpleMessage[]` — max 100 | — |
 
 **Stars & gifts:**
 
@@ -257,17 +265,12 @@ Read methods return `null` or `[]` on failure. Write methods throw `PluginSDKErr
 | `getResaleGifts(giftId, limit?)` | `StarGift[]` | `BRIDGE_NOT_CONNECTED`, `OPERATION_FAILED` |
 | `buyResaleGift(giftId)` | `void` | `BRIDGE_NOT_CONNECTED`, `OPERATION_FAILED` |
 | `getStarsTransactions(limit?)` | `StarsTransaction[]` | `BRIDGE_NOT_CONNECTED`, `OPERATION_FAILED` |
-
-**Collectibles & NFT gifts:**
-
-| Method | Returns | Throws |
-|--------|---------|--------|
-| `transferCollectible(msgId, toUserId)` | `TransferResult` | `BRIDGE_NOT_CONNECTED`, `OPERATION_FAILED` |
-| `setCollectiblePrice(msgId, price)` | `void` — 0 to unlist | `BRIDGE_NOT_CONNECTED`, `OPERATION_FAILED` |
-| `getCollectibleInfo(slug)` | `CollectibleInfo \| null` | — |
-| `getUniqueGift(slug)` | `UniqueGift \| null` | — |
-| `getUniqueGiftValue(slug)` | `GiftValue \| null` | — |
-| `sendGiftOffer(userId, giftSlug, price, opts?)` | `void` | `BRIDGE_NOT_CONNECTED`, `OPERATION_FAILED` |
+| `transferCollectible(msgId, toUserId)` | `TransferResult` — `{ msgId, transferredTo, paidTransfer }` | `BRIDGE_NOT_CONNECTED`, `OPERATION_FAILED` |
+| `setCollectiblePrice(msgId, price)` | `void` — set/remove resale price | `BRIDGE_NOT_CONNECTED`, `OPERATION_FAILED` |
+| `getCollectibleInfo(slug)` | `CollectibleInfo \| null` — Fragment collectible info | — |
+| `getUniqueGift(slug)` | `UniqueGift \| null` — NFT gift details | — |
+| `getUniqueGiftValue(slug)` | `GiftValue \| null` — market valuation | — |
+| `sendGiftOffer(userId, giftSlug, price, opts?)` | `void` — make buy offer | `BRIDGE_NOT_CONNECTED`, `OPERATION_FAILED` |
 
 **Stories:**
 
@@ -284,6 +287,51 @@ await sdk.telegram.sendMessage(chatId, "Pick one:", {
   ]
 });
 ```
+
+### sdk.bot — Inline bot integration
+
+If your plugin uses a Telegram bot for inline queries or button callbacks, declare `bot` in your manifest and use the Bot SDK:
+
+```json
+{
+  "bot": { "inline": true, "callbacks": true, "rateLimits": { "inlinePerMinute": 30 } }
+}
+```
+
+| Member | Type | Description |
+|--------|------|-------------|
+| `isAvailable` | `boolean` (getter) | Whether the inline bot router is connected |
+| `username` | `string` (getter) | Bot username from Grammy |
+| `onInlineQuery(handler)` | `void` | Register inline query handler — `handler(ctx) → InlineResult[]` |
+| `onCallback(pattern, handler)` | `void` | Register callback handler for glob pattern — `handler(ctx) → void` |
+| `onChosenResult(handler)` | `void` | Register chosen result handler |
+| `editInlineMessage(id, text, opts?)` | `void` | Edit an inline message (opts: `{ keyboard?, parseMode? }`) |
+| `keyboard(rows: ButtonDef[][])` | `BotKeyboard` | Create keyboard with `.toGrammy()` and `.toTL()` serializers |
+
+`sdk.bot` is `null` if no bot is configured or manifest doesn't declare `bot`.
+
+### sdk.on — Plugin hooks
+
+Register hooks to observe or intercept agent events. Declare hooks in your manifest:
+
+```json
+{
+  "hooks": [{ "name": "tool:after", "priority": 50, "description": "Audit tool calls" }]
+}
+```
+
+```js
+export const tools = (sdk) => {
+  sdk.on("tool:after", async (event) => {
+    sdk.log.info(`Tool ${event.toolName} returned in ${event.durationMs}ms`);
+  }, { priority: 50 });
+  return [/* tools */];
+};
+```
+
+**13 hook types:** `tool:before`, `tool:after`, `tool:error`, `prompt:before`, `prompt:after`, `session:start`, `session:end`, `message:receive`, `response:before`, `response:after`, `response:error`, `agent:start`, `agent:stop`
+
+**Priority:** negative = security gates, 0 = default, 50+ = audit/logging, 100+ = reserved.
 
 ### sdk.db — Isolated database
 
@@ -390,50 +438,6 @@ sdk.log.warn("low funds");  // ⚠️ [my-plugin] low funds
 sdk.log.error("failed");    // ❌ [my-plugin] failed
 sdk.log.debug("details");   // 🔍 [my-plugin] details  (only if DEBUG or VERBOSE env)
 ```
-
-### sdk.bot — Inline mode
-
-Enables inline query and callback button handling. Requires `bot` in manifest:
-
-```js
-export const manifest = {
-  name: "my-bot",
-  version: "1.0.0",
-  bot: { inline: true, callbacks: true, rateLimits: { inlinePerMinute: 30, callbackPerMinute: 60 } },
-};
-```
-
-`sdk.bot` is `null` unless the manifest declares `bot` capabilities.
-
-| Property / Method | Returns | Description |
-|-------------------|---------|-------------|
-| `isAvailable` | `boolean` | Whether bot client is connected (getter) |
-| `username` | `string` | Bot username (getter) |
-| `onInlineQuery(handler)` | `void` | Register inline query handler |
-| `onCallback(pattern, handler)` | `void` | Register callback handler (glob pattern) |
-| `onChosenResult(handler)` | `void` | Handle chosen inline results |
-| `editInlineMessage(id, text, opts?)` | `Promise<void>` | Edit inline message (GramJS → Grammy fallback) |
-| `keyboard(rows)` | `BotKeyboard` | Build keyboard with auto-prefixed callbacks |
-
-```js
-sdk.bot.onInlineQuery(async (ctx) => {
-  return [{ id: "1", type: "article", title: ctx.query, content: { text: ctx.query } }];
-});
-
-sdk.bot.onCallback("pick:*", async (ctx) => {
-  await ctx.answer("Selected!");
-  await ctx.editMessage("Done!");
-});
-
-const kb = sdk.bot.keyboard([
-  [{ text: "Buy", callback: "buy", style: "success" }],
-  [{ text: "Cancel", callback: "cancel", style: "danger" }],
-]);
-// kb.toTL()     — GramJS (colored buttons)
-// kb.toGrammy() — Grammy Bot API (standard buttons)
-```
-
-Button styles: `"success"` (green), `"danger"` (red), `"primary"` (blue) — GramJS only, graceful fallback.
 
 ### Error handling with SDK
 
