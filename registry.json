@@ -256,6 +256,21 @@
       "path": "plugins/twitter"
     },
     {
+      "id": "uranus",
+      "name": "Uranus Meme Launchpad",
+      "description": "Inspect, quote, trade and launch Uranus Meme tokens on TON through the protected Teleton SDK transaction broker.",
+      "author": "teleton",
+      "tags": [
+        "ton",
+        "defi",
+        "meme",
+        "launchpad",
+        "bonding-curve",
+        "trade"
+      ],
+      "path": "plugins/uranus"
+    },
+    {
       "id": "vid",
       "name": "@vid — Inline YouTube Search",
       "description": "Search and send YouTube videos via Telegram's @vid inline bot",

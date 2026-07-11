@@ -114,6 +114,11 @@
       "marketplace": true,
       "sdkVersion": "^2.0.0"
     },
+    "uranus": {
+      "status": "supported",
+      "marketplace": true,
+      "sdkVersion": "^2.1.0"
+    },
     "vid": {
       "status": "supported",
       "marketplace": true,

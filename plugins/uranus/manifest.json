@@ -1,0 +1,33 @@
+{
+  "id": "uranus",
+  "name": "Uranus Meme Launchpad",
+  "version": "1.0.0",
+  "description": "Inspect, quote, trade and launch Uranus Meme tokens on TON through the protected Teleton SDK transaction broker.",
+  "author": { "name": "teleton", "url": "https://github.com/TONresistor" },
+  "license": "MIT",
+  "entry": "index.js",
+  "teleton": ">=0.9.0",
+  "sdkVersion": "^2.1.0",
+  "secrets": {
+    "toncenter_api_key": { "required": false, "description": "Optional Toncenter v3 key for launch/trade history rate limits" }
+  },
+  "tools": [
+    { "name": "uranus_protocol_info", "description": "Return Uranus deployments, hashes, presets and operational limits" },
+    { "name": "uranus_recent_launches", "description": "Discover decoded launches from known Uranus factories" },
+    { "name": "uranus_meme_info", "description": "Inspect verified Uranus Meme, curve, partner and metadata state" },
+    { "name": "uranus_wallet_info", "description": "Resolve and verify an Uranus Meme Wallet and balance" },
+    { "name": "uranus_portfolio", "description": "List code-verified Uranus holdings in the agent wallet" },
+    { "name": "uranus_quote", "description": "Quote an Uranus curve or migrated DeDust trade" },
+    { "name": "uranus_recent_trades", "description": "Decode recent Uranus buy and sell events" },
+    { "name": "uranus_buy", "description": "Buy a verified Uranus Meme through its current route" },
+    { "name": "uranus_sell", "description": "Sell a verified Uranus Meme through its current route" },
+    { "name": "uranus_launch_preset", "description": "Launch an Uranus v3.1 Meme using preset economics" },
+    { "name": "uranus_launch_custom", "description": "Launch an Uranus v3.1 Meme using custom economics" },
+    { "name": "uranus_claim_creator_fee", "description": "Claim creator fees to the verified creator wallet" },
+    { "name": "uranus_claim_partner_fee", "description": "Claim partner fees to the stored partner wallet" }
+  ],
+  "permissions": [],
+  "tags": ["ton", "defi", "meme", "launchpad", "bonding-curve", "trade"],
+  "repository": "https://github.com/TONresistor/teleton-plugins",
+  "funding": null
+}

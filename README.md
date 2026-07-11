@@ -4,8 +4,8 @@
 
 <!-- teleton-catalog:badges:start -->
 [![SDK](https://img.shields.io/badge/SDK-v2-00C896.svg)](https://www.npmjs.com/package/@teleton-agent/sdk)
-[![Marketplace](https://img.shields.io/badge/marketplace-21-8B5CF6.svg)](#sdk-v2-marketplace)
-[![Catalog](https://img.shields.io/badge/catalog-26_plugins-E040FB.svg)](compatibility.json)
+[![Marketplace](https://img.shields.io/badge/marketplace-22-8B5CF6.svg)](#sdk-v2-marketplace)
+[![Catalog](https://img.shields.io/badge/catalog-27_plugins-E040FB.svg)](compatibility.json)
 <!-- teleton-catalog:badges:end -->
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 
@@ -26,9 +26,9 @@ removed raw Telegram access or direct wallet mnemonic access.
 <!-- teleton-catalog:summary:start -->
 | Status | Plugins | Meaning |
 |---|---:|---|
-| SDK v2 supported | 23 | Loads against SDK v2; 21 marketplace plugins plus 2 examples |
+| SDK v2 supported | 24 | Loads against SDK v2; 22 marketplace plugins plus 2 examples |
 | Quarantined | 3 | Preserved in source, rejected by SDK v2 and excluded from the marketplace |
-| Total | 26 | 191 tools |
+| Total | 27 | 204 tools |
 <!-- teleton-catalog:summary:end -->
 
 <!-- teleton-catalog:marketplace:start -->
@@ -54,6 +54,7 @@ removed raw Telegram access or direct wallet mnemonic access.
 | [swapcoffee](plugins/swapcoffee/) | 6 | Swap tokens on TON via swap.coffee aggregator - best rates across all DEXes |
 | [tonapi](plugins/tonapi/) | 20 | TON blockchain data from TONAPI -- accounts, jettons, NFTs, prices, transactions, traces, DNS, staking |
 | [twitter](plugins/twitter/) | 24 | X/Twitter API v2 — read (search, lookup, trends) + write (post, like, retweet, follow) with OAuth 1.0a |
+| [uranus](plugins/uranus/) | 13 | Inspect, quote, trade and launch Uranus Meme tokens on TON through the protected Teleton SDK transaction broker. |
 | [vid](plugins/vid/) | 1 | Search and send YouTube videos via Telegram's @vid inline bot |
 | [weather](plugins/weather/) | 2 | Current weather and 7-day forecast via Open-Meteo API |
 | [webdom](plugins/webdom/) | 11 | Buy, sell, auction, and manage .ton domains and Telegram usernames on webdom.market |
