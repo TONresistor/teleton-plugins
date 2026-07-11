@@ -32,6 +32,12 @@
       "marketplace": true,
       "sdkVersion": "^2.0.0"
     },
+    "evaa": {
+      "status": "quarantined",
+      "marketplace": false,
+      "sdkVersion": "^1.0.0",
+      "reason": "Legacy SDK v1 plugin retained for older Teleton agents; direct wallet signing is incompatible with SDK v2."
+    },
     "example": {
       "status": "supported",
       "marketplace": false,
@@ -46,6 +52,12 @@
       "status": "supported",
       "marketplace": true,
       "sdkVersion": "^2.0.0"
+    },
+    "gaspump": {
+      "status": "quarantined",
+      "marketplace": false,
+      "sdkVersion": "^1.0.0",
+      "reason": "Legacy SDK v1 plugin retained for older Teleton agents; raw bridge and wallet access are incompatible with SDK v2."
     },
     "geckoterminal": {
       "status": "supported",
@@ -106,6 +118,12 @@
       "status": "supported",
       "marketplace": true,
       "sdkVersion": "^2.1.0"
+    },
+    "voice-notes": {
+      "status": "quarantined",
+      "marketplace": false,
+      "sdkVersion": "^1.0.0",
+      "reason": "Legacy SDK v1 plugin retained for older Teleton agents; raw Telegram client access is incompatible with SDK v2."
     },
     "weather": {
       "status": "supported",
