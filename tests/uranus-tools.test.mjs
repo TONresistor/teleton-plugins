@@ -84,6 +84,15 @@ test("documented Meme getter stack order maps to named public state", async () =
   assert.equal(info.pool_partner_fee_bps, 400);
 });
 
+test("account identity fails closed when the response omits the requested address", async () => {
+  const codeHash = Buffer.from(MEME_CODE_HASHES["v3.1"], "hex").toString("base64");
+  const http = { accountState: async () => ({ accounts: [{ address: Address.parse(ONE).toRawString(), status: "active", code_hash: codeHash }] }) };
+  const identity = await createState(sdkBase(), http).inspectContract(MEME);
+  assert.equal(identity.account, null);
+  assert.equal(identity.codeHash, null);
+  assert.equal(identity.verified, false);
+});
+
 test("factory history decodes preset and custom launches and skips malformed transactions", async () => {
   const init = (queryId, initialBuy) => beginCell().storeUint(OPCODES.INIT_MEME, 32).storeUint(queryId, 64).storeCoins(initialBuy).storeBit(false).storeBit(false).endCell();
   const simple = buildDeployMeme({ queryId: 11n, presetId: 3, metadataUri: "ipfs://simple", initialBuy: 1n, partnerConfig: null, referrerConfig: null });

@@ -74,7 +74,7 @@ function findAccount(payload, address) {
     } catch {
       return false;
     }
-  }) ?? list[0] ?? null;
+  }) ?? null;
 }
 
 function detectVersion(codeHash) {
