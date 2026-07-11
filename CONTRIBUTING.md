@@ -107,7 +107,8 @@ export const tools = (sdk) => [
 Rules:
 
 - Tool names match `^[a-z][a-z0-9_]{0,63}$` and are globally unique.
-- `scope` is one of `always`, `dm-only`, `group-only`, `admin-only`.
+- `scope` is one of the SDK v2 values: `open`, `always`, `dm-only`, `group-only`,
+  `admin-only`, `allowlist`, or `disabled`.
 - `category` is `data-bearing` for reads or `action` for side effects.
 - Parameters use JSON Schema and bound arrays, strings, amounts and result counts.
 - Network calls use explicit timeouts and bounded response handling.
@@ -180,8 +181,13 @@ Every plugin has exactly one entry in [`compatibility.json`](compatibility.json)
 - `quarantined`: preserved but deliberately incompatible with SDK v2;
 - `marketplace: true`: allowed only for supported production plugins.
 
-`registry.json` is the installable marketplace, not an archive. Examples and quarantined plugins do
-not belong there.
+`registry.json` is the generated installable marketplace, not an archive. Examples and quarantined
+plugins do not belong there. Never edit it or the generated README catalog sections manually; after
+changing a manifest or `compatibility.json`, run:
+
+```bash
+npm run generate
+```
 
 ## Required local checks
 
@@ -192,6 +198,7 @@ npm ci --ignore-scripts
 npm run install:plugins
 npm run validate
 npm test
+npm --prefix ../teleton-agent run build:sdk
 npm run validate:runtime
 npm run audit:plugins
 ```
@@ -208,5 +215,5 @@ CI repeats these checks using the current `teleton-agent` `dev` branch on Node 2
 - [ ] Dependency lockfile is committed and audit is clean.
 - [ ] README documents configuration, tools and side effects.
 - [ ] `compatibility.json` is updated.
-- [ ] `registry.json` is updated only for supported marketplace plugins.
+- [ ] `npm run generate` updated the generated registry and README sections.
 - [ ] All required local checks pass.

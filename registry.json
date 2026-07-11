@@ -6,7 +6,14 @@
       "name": "boards.ton Forum",
       "description": "Browse and participate in the boards.ton decentralized forum using x402 TON micropayments",
       "author": "teleton",
-      "tags": ["forum", "discussion", "ton", "decentralized", "x402", "boards"],
+      "tags": [
+        "forum",
+        "discussion",
+        "ton",
+        "decentralized",
+        "x402",
+        "boards"
+      ],
       "path": "plugins/boards"
     },
     {
@@ -14,7 +21,12 @@
       "name": "Teleton Casino",
       "description": "Slot machine and dice games with TON payments and auto-payout",
       "author": "teleton",
-      "tags": ["casino", "games", "ton", "gambling"],
+      "tags": [
+        "casino",
+        "games",
+        "ton",
+        "gambling"
+      ],
       "path": "plugins/casino"
     },
     {
@@ -22,7 +34,11 @@
       "name": "Crypto Prices",
       "description": "Real-time cryptocurrency prices and comparison via CryptoCompare API",
       "author": "walged",
-      "tags": ["crypto", "prices", "utility"],
+      "tags": [
+        "crypto",
+        "prices",
+        "utility"
+      ],
       "path": "plugins/crypto-prices"
     },
     {
@@ -30,7 +46,13 @@
       "name": "DeDust DEX",
       "description": "Swap tokens, browse pools, and trade on DeDust -- TON's #2 DEX",
       "author": "teleton",
-      "tags": ["defi", "ton", "dex", "swap", "liquidity"],
+      "tags": [
+        "defi",
+        "ton",
+        "dex",
+        "swap",
+        "liquidity"
+      ],
       "path": "plugins/dedust"
     },
     {
@@ -38,7 +60,14 @@
       "name": "DYOR Token Analytics",
       "description": "TON token analytics from DYOR.io -- search, price, trust score, metrics, DEX trades, holders, pools",
       "author": "teleton",
-      "tags": ["analytics", "ton", "market-data", "trust-score", "defi", "dex"],
+      "tags": [
+        "analytics",
+        "ton",
+        "market-data",
+        "trust-score",
+        "defi",
+        "dex"
+      ],
       "path": "plugins/dyor"
     },
     {
@@ -46,7 +75,14 @@
       "name": "Fragment Marketplace",
       "description": "Search and browse Telegram's NFT marketplace — usernames, numbers, collectible gifts, auction history",
       "author": "teleton",
-      "tags": ["marketplace", "telegram", "nft", "ton", "usernames", "collectibles"],
+      "tags": [
+        "marketplace",
+        "telegram",
+        "nft",
+        "ton",
+        "usernames",
+        "collectibles"
+      ],
       "path": "plugins/fragment"
     },
     {
@@ -54,7 +90,14 @@
       "name": "GeckoTerminal",
       "description": "TON DEX pool and token data -- trending, new, and top pools, trades, OHLCV, token info, batch prices",
       "author": "teleton",
-      "tags": ["market-data", "dex", "analytics", "ton", "trading", "defi"],
+      "tags": [
+        "market-data",
+        "dex",
+        "analytics",
+        "ton",
+        "trading",
+        "defi"
+      ],
       "path": "plugins/geckoterminal"
     },
     {
@@ -62,7 +105,13 @@
       "name": "Giftstat Market Data",
       "description": "Telegram gift market data -- collections, floor prices, models, stats, history",
       "author": "teleton",
-      "tags": ["market-data", "ton", "gifts", "trading", "api"],
+      "tags": [
+        "market-data",
+        "ton",
+        "gifts",
+        "trading",
+        "api"
+      ],
       "path": "plugins/giftstat"
     },
     {
@@ -70,7 +119,14 @@
       "name": "StonFi DEX",
       "description": "Swap tokens, browse pools, and farm on StonFi DEX -- the largest DEX on TON",
       "author": "teleton",
-      "tags": ["defi", "ton", "dex", "swap", "liquidity", "farming"],
+      "tags": [
+        "defi",
+        "ton",
+        "dex",
+        "swap",
+        "liquidity",
+        "farming"
+      ],
       "path": "plugins/stonfi"
     },
     {
@@ -78,7 +134,15 @@
       "name": "TONAPI Explorer",
       "description": "TON blockchain data from TONAPI -- accounts, jettons, NFTs, prices, transactions, traces, DNS, staking",
       "author": "teleton",
-      "tags": ["blockchain", "ton", "explorer", "nft", "staking", "dns", "analytics"],
+      "tags": [
+        "blockchain",
+        "ton",
+        "explorer",
+        "nft",
+        "staking",
+        "dns",
+        "analytics"
+      ],
       "path": "plugins/tonapi"
     },
     {
@@ -86,7 +150,14 @@
       "name": "Twitter/X",
       "description": "X/Twitter API v2 — read (search, lookup, trends) + write (post, like, retweet, follow) with OAuth 1.0a",
       "author": "teleton",
-      "tags": ["social", "twitter", "x", "search", "trends", "oauth"],
+      "tags": [
+        "social",
+        "twitter",
+        "x",
+        "search",
+        "trends",
+        "oauth"
+      ],
       "path": "plugins/twitter"
     },
     {
@@ -94,7 +165,10 @@
       "name": "Weather Forecast",
       "description": "Current weather and 7-day forecast via Open-Meteo API",
       "author": "walged",
-      "tags": ["weather", "utility"],
+      "tags": [
+        "weather",
+        "utility"
+      ],
       "path": "plugins/weather"
     }
   ]

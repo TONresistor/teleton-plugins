@@ -2,9 +2,11 @@
 
 # teleton-plugins
 
+<!-- teleton-catalog:badges:start -->
 [![SDK](https://img.shields.io/badge/SDK-v2-00C896.svg)](https://www.npmjs.com/package/@teleton-agent/sdk)
 [![Marketplace](https://img.shields.io/badge/marketplace-12-8B5CF6.svg)](#sdk-v2-marketplace)
 [![Catalog](https://img.shields.io/badge/catalog-26_plugins-E040FB.svg)](compatibility.json)
+<!-- teleton-catalog:badges:end -->
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 
 Official community plugin catalog for [Teleton Agent](https://github.com/TONresistor/teleton-agent).
@@ -13,47 +15,62 @@ Official community plugin catalog for [Teleton Agent](https://github.com/TONresi
 
 ## Compatibility policy
 
-The catalog targets `@teleton-agent/sdk@2.0.0`. Only plugins marked `supported` in
-[`compatibility.json`](compatibility.json) may appear in [`registry.json`](registry.json).
+The target SDK version and plugin status are declared once in
+[`compatibility.json`](compatibility.json). Only supported marketplace plugins are generated into
+[`registry.json`](registry.json).
 
 Legacy source remains available for migration and audit history, but quarantined plugins are not
 offered through the WebUI marketplace. This prevents SDK v2 from installing plugins that depend on
 removed raw Telegram access or direct wallet mnemonic access.
 
+<!-- teleton-catalog:summary:start -->
 | Status | Plugins | Meaning |
 |---|---:|---|
 | SDK v2 supported | 14 | Loads against SDK v2; 12 marketplace plugins plus 2 examples |
 | Quarantined | 12 | Preserved in source, rejected by SDK v2 and excluded from the marketplace |
-| Total | 26 | 191 tools: 135 data tools and 56 actions |
+| Total | 26 | 191 tools |
+<!-- teleton-catalog:summary:end -->
 
+<!-- teleton-catalog:marketplace:start -->
 ## SDK v2 marketplace
 
 | Plugin | Tools | Description |
 |---|---:|---|
-| [boards](plugins/boards/) | 9 | boards.ton forum with x402 TON payments |
-| [casino](plugins/casino/) | 4 | Dice and slot games with verified TON payments |
-| [crypto-prices](plugins/crypto-prices/) | 2 | CryptoCompare prices and comparisons |
-| [dedust](plugins/dedust/) | 8 | DeDust market data, quotes and brokered swaps |
-| [dyor](plugins/dyor/) | 11 | DYOR.io TON token analytics |
-| [fragment](plugins/fragment/) | 6 | Fragment marketplace discovery |
-| [geckoterminal](plugins/geckoterminal/) | 10 | TON DEX pools, trades and OHLCV data |
-| [giftstat](plugins/giftstat/) | 11 | Telegram gift market data |
-| [stonfi](plugins/stonfi/) | 8 | STON.fi market data, quotes and brokered swaps |
-| [tonapi](plugins/tonapi/) | 20 | TON accounts, jettons, NFTs, DNS and staking data |
-| [twitter](plugins/twitter/) | 24 | X/Twitter read and write operations using declared secrets |
-| [weather](plugins/weather/) | 2 | Current weather and seven-day forecasts |
+| [boards](plugins/boards/) | 9 | Browse and participate in the boards.ton decentralized forum using x402 TON micropayments |
+| [casino](plugins/casino/) | 4 | Slot machine and dice games with TON payments and auto-payout |
+| [crypto-prices](plugins/crypto-prices/) | 2 | Real-time cryptocurrency prices and comparison via CryptoCompare API |
+| [dedust](plugins/dedust/) | 8 | Swap tokens, browse pools, and trade on DeDust -- TON's #2 DEX |
+| [dyor](plugins/dyor/) | 11 | TON token analytics from DYOR.io -- search, price, trust score, metrics, DEX trades, holders, pools |
+| [fragment](plugins/fragment/) | 6 | Search and browse Telegram's NFT marketplace — usernames, numbers, collectible gifts, auction history |
+| [geckoterminal](plugins/geckoterminal/) | 10 | TON DEX pool and token data -- trending, new, and top pools, trades, OHLCV, token info, batch prices |
+| [giftstat](plugins/giftstat/) | 11 | Telegram gift market data -- collections, floor prices, models, stats, history |
+| [stonfi](plugins/stonfi/) | 8 | Swap tokens, browse pools, and farm on StonFi DEX -- the largest DEX on TON |
+| [tonapi](plugins/tonapi/) | 20 | TON blockchain data from TONAPI -- accounts, jettons, NFTs, prices, transactions, traces, DNS, staking |
+| [twitter](plugins/twitter/) | 24 | X/Twitter API v2 — read (search, lookup, trends) + write (post, like, retweet, follow) with OAuth 1.0a |
+| [weather](plugins/weather/) | 2 | Current weather and 7-day forecast via Open-Meteo API |
+<!-- teleton-catalog:marketplace:end -->
 
 Development examples are available in [`plugins/example`](plugins/example/) and
 [`plugins/example-sdk`](plugins/example-sdk/), but are intentionally not marketplace entries.
 
 ## Quarantined legacy plugins
 
-| Plugins | Blocker |
+<!-- teleton-catalog:quarantine:start -->
+| Plugin | Blocker |
 |---|---|
-| `pic`, `vid`, `deezer`, `voice-notes` | Depend on the removed `sdk.telegram.getRawClient()` API |
-| `gaspump` | Depends on removed `context.bridge` and direct wallet signing |
-| `evaa`, `giftindex`, `stormtrade`, `swapcoffee`, `webdom` | Read and sign with the wallet mnemonic directly |
-| `multisend`, `sbt` | Require specialized signing or contract deployment capabilities |
+| `deezer` | Uses the removed sdk.telegram.getRawClient() escape hatch. |
+| `evaa` | Reads and signs with the agent wallet mnemonic directly; requires a core transaction broker. |
+| `gaspump` | Uses removed context.bridge access and reads the wallet mnemonic directly. |
+| `giftindex` | Reads and signs with the agent wallet mnemonic directly; requires a core transaction broker. |
+| `multisend` | Reads the mnemonic and controls a Highload wallet directly; requires a specialized signing broker. |
+| `pic` | Uses the removed sdk.telegram.getRawClient() escape hatch. |
+| `sbt` | Reads the mnemonic and deploys contracts directly; requires a specialized signing broker. |
+| `stormtrade` | Reads and signs with the agent wallet mnemonic directly; requires a core transaction broker. |
+| `swapcoffee` | Reads and signs with the agent wallet mnemonic directly; requires a core transaction broker. |
+| `vid` | Uses the removed sdk.telegram.getRawClient() escape hatch. |
+| `voice-notes` | Uses the removed sdk.telegram.getRawClient() escape hatch. |
+| `webdom` | Reads and signs with the agent wallet mnemonic directly; requires a core transaction broker. |
+<!-- teleton-catalog:quarantine:end -->
 
 These plugins declare `sdkVersion: "^1.0.0"`, so SDK v2 rejects them before registering tools.
 They return to the marketplace only after migration to public SDK capabilities.
@@ -133,11 +150,12 @@ npm ci --ignore-scripts
 npm run install:plugins
 npm run validate
 npm test
+npm --prefix ../teleton-agent run build:sdk
 npm run validate:runtime
 npm run audit:plugins
 ```
 
-Runtime validation imports all 26 plugins against the sibling `../teleton-agent` SDK checkout,
+Runtime validation imports every plugin against the sibling `../teleton-agent` SDK checkout,
 compares runtime tools with manifests, and rejects duplicate or malformed tools. CI runs the same
 checks on Node 22 and Node 24.
 

@@ -6,10 +6,15 @@ import { pluginDirectories, readJson, validateCatalog } from "./catalog-lib.mjs"
 const root = process.cwd();
 const agentDir = resolve(process.env.TELETON_AGENT_DIR ?? "../teleton-agent");
 const agentBin = resolve(agentDir, "bin/teleton.js");
-const sdkPackage = resolve(agentDir, "packages/sdk/package.json");
+const sdkEntry = resolve(agentDir, "packages/sdk/dist/index.js");
 
-if (!existsSync(agentBin) || !existsSync(sdkPackage)) {
+if (!existsSync(agentBin)) {
   console.error(`ERROR: Teleton Agent checkout not found at ${agentDir}`);
+  process.exit(1);
+}
+if (!existsSync(sdkEntry)) {
+  console.error(`ERROR: Teleton SDK build not found at ${sdkEntry}`);
+  console.error(`Run: npm --prefix ${agentDir} run build:sdk`);
   process.exit(1);
 }
 
@@ -19,7 +24,11 @@ if (catalog.errors.length > 0) {
   process.exit(1);
 }
 
-const sdkVersion = readJson(sdkPackage).version;
+const {
+  SDK_VERSION: sdkVersion,
+  TOOL_CATEGORIES: sdkToolCategories,
+  TOOL_SCOPES: sdkToolScopes,
+} = await import(pathToFileURL(sdkEntry).href);
 const policy = readJson(resolve(root, "compatibility.json"));
 if (sdkVersion !== policy.targetSdkVersion) {
   console.error(
@@ -48,8 +57,8 @@ const sdk = {
   on() {},
 };
 
-const scopes = new Set(["always", "dm-only", "group-only", "admin-only"]);
-const categories = new Set(["data-bearing", "action"]);
+const scopes = new Set(sdkToolScopes);
+const categories = new Set(sdkToolCategories);
 const globalToolNames = new Map();
 let toolCount = 0;
 let dataToolCount = 0;
@@ -99,10 +108,20 @@ for (const id of pluginDirectories(root)) {
     if (!/^[a-z][a-z0-9_]{0,63}$/.test(tool.name ?? "")) {
       errors.push(`${id}: invalid runtime tool name ${String(tool.name)}`);
     }
-    if (typeof tool.description !== "string" || tool.description.length === 0) {
-      errors.push(`${id}/${tool.name}: missing runtime description`);
+    if (
+      typeof tool.description !== "string" ||
+      tool.description.length === 0 ||
+      tool.description.length > 1024
+    ) {
+      errors.push(`${id}/${tool.name}: invalid runtime description`);
     }
     if (typeof tool.execute !== "function") errors.push(`${id}/${tool.name}: missing execute()`);
+    if (
+      tool.parameters !== undefined &&
+      (!tool.parameters || typeof tool.parameters !== "object" || Array.isArray(tool.parameters))
+    ) {
+      errors.push(`${id}/${tool.name}: invalid parameters schema`);
+    }
     if (!scopes.has(tool.scope)) errors.push(`${id}/${tool.name}: invalid or missing scope`);
     if (!categories.has(tool.category)) errors.push(`${id}/${tool.name}: invalid or missing category`);
     if (tool.requiresApproval !== undefined && typeof tool.requiresApproval !== "boolean") {

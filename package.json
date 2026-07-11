@@ -7,7 +7,9 @@
     "node": "^22.22.2 || ^24.15.0 || >=26.0.0"
   },
   "scripts": {
-    "validate": "node scripts/validate-catalog.mjs",
+    "generate": "node scripts/generate-catalog.mjs",
+    "check:generated": "node scripts/generate-catalog.mjs --check",
+    "validate": "npm run check:generated && node scripts/validate-catalog.mjs",
     "validate:runtime": "node scripts/validate-runtime.mjs",
     "install:plugins": "node scripts/install-plugin-deps.mjs",
     "audit:plugins": "node scripts/audit-plugin-deps.mjs",

@@ -1,28 +1,20 @@
 import { existsSync, readFileSync, readdirSync } from "node:fs";
 import { join } from "node:path";
+import { pluginDirectories, readJson } from "./catalog-source.mjs";
+
+export { pluginDirectories, readJson } from "./catalog-source.mjs";
 
 const SEMVER_RE = /^\d+\.\d+\.\d+$/;
 const PLUGIN_ID_RE = /^[a-z0-9][a-z0-9-]*$/;
 const TOOL_NAME_RE = /^[a-z][a-z0-9_]{0,63}$/;
-const SDK_RANGE_RE = /^\^[12]\.0\.0$/;
-
-export function readJson(path) {
-  return JSON.parse(readFileSync(path, "utf8"));
-}
-
-export function pluginDirectories(root = process.cwd()) {
-  const pluginsDir = join(root, "plugins");
-  return readdirSync(pluginsDir)
-    .filter((name) => existsSync(join(pluginsDir, name, "manifest.json")))
-    .sort();
-}
+const SDK_RANGE_RE = /^\^\d+\.\d+\.\d+$/;
 
 export function validateCatalog(root = process.cwd()) {
   const errors = [];
   const compatibility = readJson(join(root, "compatibility.json"));
-  const registry = readJson(join(root, "registry.json"));
   const directories = pluginDirectories(root);
   const compatibilityIds = Object.keys(compatibility.plugins).sort();
+  const targetSdkRange = `^${compatibility.targetSdkVersion}`;
 
   if (compatibility.schemaVersion !== 1) errors.push("compatibility.schemaVersion must be 1");
   if (!SEMVER_RE.test(compatibility.targetSdkVersion)) {
@@ -31,11 +23,7 @@ export function validateCatalog(root = process.cwd()) {
   if (JSON.stringify(directories) !== JSON.stringify(compatibilityIds)) {
     errors.push("compatibility.json must contain exactly one entry for every plugin directory");
   }
-  if (registry.version !== "2.0.0") errors.push("registry.version must be 2.0.0");
-  if (!Array.isArray(registry.plugins)) errors.push("registry.plugins must be an array");
-
   const manifestTools = new Map();
-  const manifests = new Map();
   const forbiddenSupportedPatterns = [
     ["sdk.telegram.getRawClient(", "removed sdk.telegram.getRawClient()"],
     ["context.bridge", "removed context.bridge"],
@@ -48,8 +36,6 @@ export function validateCatalog(root = process.cwd()) {
     const pluginDir = join(root, "plugins", id);
     const manifest = readJson(join(pluginDir, "manifest.json"));
     const policy = compatibility.plugins[id];
-    manifests.set(id, manifest);
-
     if (!policy || !["supported", "quarantined"].includes(policy.status)) {
       errors.push(`${id}: compatibility status must be supported or quarantined`);
       continue;
@@ -102,8 +88,8 @@ export function validateCatalog(root = process.cwd()) {
       }
     }
 
-    if (policy.status === "supported" && expectedRange && expectedRange !== "^2.0.0") {
-      errors.push(`${id}: supported SDK plugins must target ^2.0.0`);
+    if (policy.status === "supported" && expectedRange && expectedRange !== targetSdkRange) {
+      errors.push(`${id}: supported SDK plugins must target ${targetSdkRange}`);
     }
     if (policy.status === "quarantined") {
       if (policy.marketplace !== false) errors.push(`${id}: quarantined plugins cannot be listed`);
@@ -141,33 +127,9 @@ export function validateCatalog(root = process.cwd()) {
     }
   }
 
-  const expectedRegistryIds = directories
-    .filter((id) => compatibility.plugins[id].marketplace === true)
-    .sort();
-  const registryIds = (registry.plugins ?? []).map((entry) => entry.id);
-  if (new Set(registryIds).size !== registryIds.length) errors.push("registry contains duplicate IDs");
-  if (JSON.stringify(registryIds) !== JSON.stringify(expectedRegistryIds)) {
-    errors.push("registry must contain the marketplace-compatible plugins in ID order");
-  }
-
-  for (const entry of registry.plugins ?? []) {
-    const manifest = manifests.get(entry.id);
-    if (!manifest) {
-      errors.push(`registry: unknown plugin ${entry.id}`);
-      continue;
-    }
-    if (entry.path !== `plugins/${entry.id}`) errors.push(`${entry.id}: invalid registry path`);
-    if (entry.name !== manifest.name) errors.push(`${entry.id}: registry and manifest names differ`);
-    if (entry.description !== manifest.description) {
-      errors.push(`${entry.id}: registry and manifest descriptions differ`);
-    }
-    if (entry.author !== manifest.author.name) {
-      errors.push(`${entry.id}: registry and manifest authors differ`);
-    }
-    if (JSON.stringify(entry.tags) !== JSON.stringify(manifest.tags)) {
-      errors.push(`${entry.id}: registry and manifest tags differ`);
-    }
-  }
+  const expectedRegistryIds = directories.filter(
+    (id) => compatibility.plugins[id]?.marketplace === true
+  );
 
   return {
     errors,

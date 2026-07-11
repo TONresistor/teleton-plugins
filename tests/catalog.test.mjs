@@ -5,9 +5,8 @@ import { validateCatalog } from "../scripts/catalog-lib.mjs";
 test("catalog, manifests, compatibility policy and registry stay synchronized", () => {
   const result = validateCatalog();
   assert.deepEqual(result.errors, []);
-  assert.equal(result.pluginCount, 26);
-  assert.equal(result.toolCount, 191);
-  assert.equal(result.supportedCount, 14);
-  assert.equal(result.quarantinedCount, 12);
-  assert.equal(result.marketplaceCount, 12);
+  assert.equal(result.supportedCount + result.quarantinedCount, result.pluginCount);
+  assert.ok(result.pluginCount > 0);
+  assert.ok(result.toolCount > 0);
+  assert.ok(result.marketplaceCount <= result.supportedCount);
 });

@@ -27,7 +27,7 @@ The public API is defined by `@teleton-agent/sdk@^2`. Do not infer APIs from old
 4. Implement `index.js`, `manifest.json` and `README.md`.
 5. Add a `package.json` and lockfile only when external dependencies are necessary.
 6. Add or update the plugin's `compatibility.json` entry.
-7. Add the plugin to `registry.json` only when it is SDK v2 supported and production-ready.
+7. Run `npm run generate`; supported production-ready plugins enter `registry.json` automatically.
 8. Run the full repository validation commands.
 
 ## Choose the plugin pattern
@@ -66,7 +66,7 @@ Never use:
 
 If the SDK lacks a required capability, do not create an escape hatch. Preserve the plugin as
 `quarantined`, set its range to `^1.0.0`, explain the blocker in `compatibility.json`, and keep it out
-of `registry.json`.
+of the generated `registry.json`.
 
 ## Minimal SDK v2 template
 
@@ -115,8 +115,10 @@ Run from the repository root with `../teleton-agent` available:
 ```bash
 npm ci --ignore-scripts
 npm run install:plugins
+npm run generate
 npm run validate
 npm test
+npm --prefix ../teleton-agent run build:sdk
 npm run validate:runtime
 npm run audit:plugins
 ```
