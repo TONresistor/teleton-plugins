@@ -16,7 +16,7 @@ const API_BASE = "https://tonapi.io";
 export const manifest = {
   name: "tonapi",
   version: "1.0.0",
-  sdkVersion: ">=1.0.0",
+  sdkVersion: "^2.0.0",
   description: "TON blockchain data from TONAPI -- accounts, jettons, NFTs, prices, transactions, traces, DNS, staking",
 };
 

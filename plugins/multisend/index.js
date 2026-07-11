@@ -115,7 +115,7 @@ function formatTON(nano) {
 export const manifest = {
   name: "multisend",
   version: "1.0.0",
-  sdkVersion: ">=1.0.0",
+  sdkVersion: "^1.0.0",
   description: "Batch TON and jetton transfers via Highload Wallet v3 — send to up to 254 recipients in a single transaction.",
 };
 

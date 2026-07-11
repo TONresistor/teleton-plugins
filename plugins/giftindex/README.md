@@ -1,5 +1,8 @@
 # giftindex
 
+> [!WARNING]
+> Legacy SDK v1 plugin. It is quarantined and not installable from the SDK v2 marketplace.
+
 Trade the [GiftIndex](https://giftindex.io) ODROB on TON -- monitor, analyze, and trade the Telegram Gifts index.
 
 Aggregates gift collection floor prices, calculates fair value, and trades GHOLD/FLOOR tokens via on-chain order books.

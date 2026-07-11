@@ -48,7 +48,7 @@ import {
 export const manifest = {
   name: "giftindex",
   version: "2.0.0",
-  sdkVersion: ">=1.0.0",
+  sdkVersion: "^1.0.0",
   description: "GiftIndex ODROB trading — monitor and trade the Telegram Gifts index on TON with workflow guardrails.",
 };
 

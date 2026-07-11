@@ -1,5 +1,8 @@
 # EVAA Protocol
 
+> [!WARNING]
+> Legacy SDK v1 plugin. It is quarantined and not installable from the SDK v2 marketplace.
+
 Lending and borrowing on TON via EVAA. Supply assets to earn interest, borrow against collateral, and liquidate undercollateralized positions across 4 pools (Main, LP, Alts, Stable).
 
 | Tool | Description |

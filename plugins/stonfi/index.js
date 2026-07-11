@@ -3,44 +3,20 @@
  *
  * Search tokens, check prices, browse pools/farms, get swap quotes,
  * and execute swaps on StonFi DEX. Uses @ston-fi/api (StonApiClient)
- * for all API calls. Agent wallet at ~/.teleton/wallet.json signs swaps.
+ * for market data and the Teleton SDK v2 transaction broker for swaps.
  */
 
 import { createRequire } from "node:module";
-import { readFileSync, realpathSync } from "node:fs";
-import { join } from "node:path";
-import { homedir } from "node:os";
 
 // ---------------------------------------------------------------------------
 // CJS dependencies
 // ---------------------------------------------------------------------------
 
-const _require = createRequire(realpathSync(process.argv[1]));       // core: @ton/core, @ton/ton, @ton/crypto
-const _pluginRequire = createRequire(import.meta.url);                // local: plugin-specific deps
-
-const { Address, SendMode } = _require("@ton/core");
-const { WalletContractV5R1, TonClient, internal } = _require("@ton/ton");
-const { mnemonicToPrivateKey } = _require("@ton/crypto");
+const _pluginRequire = createRequire(import.meta.url);
 
 // StonFi API client (from plugin's local node_modules)
 const { StonApiClient } = _pluginRequire("@ston-fi/api");
 const stonApi = new StonApiClient();
-
-// StonFi SDK (for swap execution)
-let dexFactory;
-try {
-  const stonfi = _pluginRequire("@ston-fi/sdk");
-  dexFactory = stonfi.dexFactory ?? stonfi.DEX;
-} catch {
-  // SDK not available -- swap execution will fail with clear error
-}
-
-// ---------------------------------------------------------------------------
-// Constants
-// ---------------------------------------------------------------------------
-
-const TON_ADDRESS = "EQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAM9c";
-const WALLET_FILE = join(homedir(), ".teleton", "wallet.json");
 
 // ---------------------------------------------------------------------------
 // Asset cache (5-minute TTL via sdk.storage)
@@ -80,41 +56,6 @@ function fmtAsset(a) {
     price_usd: a.dexPriceUsd ?? null,
     tags: a.tags ?? [],
   };
-}
-
-// ---------------------------------------------------------------------------
-// Wallet helper
-// ---------------------------------------------------------------------------
-
-async function getWalletAndClient() {
-  let walletData;
-  try {
-    walletData = JSON.parse(readFileSync(WALLET_FILE, "utf-8"));
-  } catch {
-    throw new Error("Agent wallet not found at " + WALLET_FILE);
-  }
-  if (!walletData.mnemonic || !Array.isArray(walletData.mnemonic)) {
-    throw new Error("Invalid wallet file: missing mnemonic array");
-  }
-
-  const keyPair = await mnemonicToPrivateKey(walletData.mnemonic);
-  const wallet = WalletContractV5R1.create({
-    workchain: 0,
-    publicKey: keyPair.publicKey,
-  });
-
-  let endpoint;
-  try {
-    const { getHttpEndpoint } = _pluginRequire("@orbs-network/ton-access");
-    endpoint = await getHttpEndpoint({ network: "mainnet" });
-  } catch {
-    endpoint = "https://toncenter.com/api/v2/jsonRPC";
-  }
-
-  const client = new TonClient({ endpoint });
-  const contract = client.open(wallet);
-
-  return { wallet, keyPair, client, contract };
 }
 
 // ---------------------------------------------------------------------------
@@ -600,7 +541,7 @@ const stonfiSwapQuote = {
 const stonfiSwap = {
   name: "stonfi_swap",
   description:
-    "Execute a token swap on StonFi DEX. Simulates the swap via @ston-fi/api, builds the transaction via @ston-fi/sdk, and signs with the agent wallet. Call stonfi_swap_quote first to preview.",
+    "Execute a token swap on StonFi through the Teleton SDK transaction broker. Call stonfi_swap_quote first to preview.",
   category: "action",
   scope: "admin-only",
 
@@ -632,118 +573,29 @@ const stonfiSwap = {
 
   execute: async (params) => {
     try {
-      if (!dexFactory) {
-        throw new Error(
-          "@ston-fi/sdk is not installed. Install it to execute swaps."
-        );
-      }
-
       const slippage = params.slippage ?? 0.01;
-      const inputAmount = Number(params.amount);
-      if (!Number.isFinite(inputAmount) || inputAmount <= 0) {
+      const amount = Number(params.amount);
+      if (!Number.isFinite(amount) || amount <= 0) {
         throw new Error("amount must be a positive number");
       }
-
-      // Step 1: Look up offer + ask asset decimals in parallel
-      const [offerAsset, askAsset] = await Promise.all([
-        stonApi.getAsset(params.offer_address),
-        stonApi.getAsset(params.ask_address),
-      ]);
-      const offerDecimals = offerAsset.decimals ?? 9;
-      const askDecimals = askAsset.decimals ?? 9;
-
-      _sdk?.log?.info(`Executing swap: ${params.amount} ${offerAsset.symbol} -> ${askAsset.symbol} (slippage: ${slippage})`);
-
-      // Step 2: Simulate swap via StonApiClient
-      const units = toUnits(params.amount, offerDecimals);
-      const sim = await stonApi.simulateSwap({
-        offerAddress: params.offer_address,
-        askAddress: params.ask_address,
-        offerUnits: units,
-        slippageTolerance: String(slippage),
-      });
-
-      if (!sim.router) {
-        throw new Error("Swap simulation did not return router info");
-      }
-
-      // Step 3: Get wallet
-      const { wallet, keyPair, client, contract } =
-        await getWalletAndClient();
-      const walletAddr = wallet.address.toString();
-
-      // Step 4: Build transaction via SDK (dexFactory auto-detects version)
-      const dexContracts = dexFactory(sim.router);
-      const router = client.open(
-        dexContracts.Router.create(sim.router.address)
-      );
-      const proxyTon = dexContracts.pTON.create(
-        sim.router.ptonMasterAddress
-      );
-
-      const offerIsTon = params.offer_address === TON_ADDRESS;
-      const askIsTon = params.ask_address === TON_ADDRESS;
-
-      let txParams;
-      if (offerIsTon) {
-        txParams = await router.getSwapTonToJettonTxParams({
-          userWalletAddress: walletAddr,
-          offerAmount: sim.offerUnits,
-          minAskAmount: sim.minAskUnits,
-          askJettonAddress: params.ask_address,
-          proxyTon,
-        });
-      } else if (askIsTon) {
-        txParams = await router.getSwapJettonToTonTxParams({
-          userWalletAddress: walletAddr,
-          offerJettonAddress: params.offer_address,
-          offerAmount: sim.offerUnits,
-          minAskAmount: sim.minAskUnits,
-          proxyTon,
-        });
-      } else {
-        txParams = await router.getSwapJettonToJettonTxParams({
-          userWalletAddress: walletAddr,
-          offerJettonAddress: params.offer_address,
-          askJettonAddress: params.ask_address,
-          offerAmount: sim.offerUnits,
-          minAskAmount: sim.minAskUnits,
-        });
-      }
-
-      // Step 5: Send transaction
-      const seqno = await contract.getSeqno();
-      await contract.sendTransfer({
-        seqno,
-        secretKey: keyPair.secretKey,
-        sendMode: SendMode.PAY_GAS_SEPARATELY | SendMode.IGNORE_ERRORS,
-        messages: [
-          internal({
-            to: txParams.to,
-            value: txParams.value,
-            body: txParams.body,
-            bounce: true,
-          }),
-        ],
+      const result = await _sdk.ton.dex.swapSTONfi({
+        fromAsset: params.offer_address,
+        toAsset: params.ask_address,
+        amount,
+        slippage,
       });
 
       return {
         success: true,
         data: {
-          offer_amount: params.amount,
-          offer_symbol: offerAsset.symbol ?? null,
-          expected_output: fromUnits(sim.askUnits, askDecimals),
-          min_output: fromUnits(sim.minAskUnits, askDecimals),
-          ask_symbol: askAsset.symbol ?? null,
-          swap_rate: sim.swapRate ?? null,
-          price_impact: sim.priceImpact ?? null,
-          slippage,
-          seqno,
-          wallet_address: walletAddr,
-          router_address: sim.routerAddress ?? null,
-          pool_address: sim.poolAddress ?? null,
-          message:
-            "Swap transaction sent. Confirmation typically takes ~30 seconds on TON.",
+          offer_address: result.fromAsset,
+          ask_address: result.toAsset,
+          offer_amount: result.amountIn,
+          expected_output: result.expectedOutput,
+          min_output: result.minOutput,
+          slippage: result.slippage,
+          tx_ref: result.txRef ?? null,
+          message: "Swap transaction confirmed by the Teleton transaction broker.",
         },
       };
     } catch (err) {
@@ -763,7 +615,7 @@ const stonfiSwap = {
 export const manifest = {
   name: "stonfi",
   version: "1.0.0",
-  sdkVersion: ">=1.0.0",
+  sdkVersion: "^2.0.0",
   description: "StonFi DEX on TON — search tokens, check prices, browse pools/farms, get swap quotes, and execute swaps.",
 };
 

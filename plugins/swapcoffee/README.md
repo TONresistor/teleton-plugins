@@ -1,5 +1,8 @@
 # swapcoffee
 
+> [!WARNING]
+> Legacy SDK v1 plugin. It is quarantined and not installable from the SDK v2 marketplace.
+
 Swap tokens on TON via [swap.coffee](https://swap.coffee) DEX aggregator -- finds the best rate across STON.fi, DeDust, Tonco, Coffee DEX, and 15+ other DEXes.
 
 Read tools use the swap.coffee REST API. Write tools sign transactions from the agent wallet.

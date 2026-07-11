@@ -20,7 +20,7 @@ const { Api } = _require("telegram");
 export const manifest = {
   name: "deezer",
   version: "1.0.1",
-  sdkVersion: ">=1.0.0",
+  sdkVersion: "^1.0.0",
   description: "Search and send music tracks in chat via Telegram's @DeezerMusicBot inline bot.",
 };
 

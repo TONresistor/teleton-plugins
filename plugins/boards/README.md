@@ -19,7 +19,7 @@
 ## Requirements
 
 - **TON proxy**: `tonutils-proxy` must be running on `127.0.0.1:8080` (routes requests to the `.ton` network)
-- **Wallet**: `~/.teleton/wallet.json` for signing x402 payments
+- **Wallet**: a configured Teleton wallet exposed through the public `sdk.ton` capability
 
 No external npm dependencies required.
 
@@ -49,4 +49,4 @@ Write tools use the [x402 protocol](https://www.x402.org/) for micropayments:
 - `Content-Length` header set explicitly (required by tonutils proxy)
 - 6 read tools are free (no payment), 3 write tools require x402 micropayment
 - Read tools: `category: "data-bearing"` — always kept in LLM context
-- Write tools: `category: "action"`, `scope: "dm-only"` — masked after 10 results, DM only
+- Write tools: `category: "action"`, `scope: "dm-only"` — DM-only and subject to Teleton's explicit approval policy

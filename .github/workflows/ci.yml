@@ -1,0 +1,138 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    name: Validate (Node ${{ matrix.node }})
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    strategy:
+      fail-fast: false
+      matrix:
+        node: ["22.22.2", "24.15.0"]
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v4
+
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v4
+        with:
+          repository: TONresistor/teleton-agent
+          ref: dev
+          path: .teleton-agent
+
+      - uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v4
+        with:
+          node-version: ${{ matrix.node }}
+          cache: npm
+          cache-dependency-path: |
+            package-lock.json
+            .teleton-agent/package-lock.json
+            plugins/*/package-lock.json
+
+      - name: Install catalog tooling
+        run: npm ci --ignore-scripts --no-audit --no-fund
+
+      - name: Install Teleton host dependencies
+        run: npm ci --ignore-scripts --no-audit --no-fund
+        working-directory: .teleton-agent
+
+      - name: Install plugin dependencies
+        run: npm run install:plugins
+
+      - name: Validate catalog policy
+        run: npm run validate
+
+      - name: Run catalog tests
+        run: npm test
+
+      - name: Load every plugin against the current SDK
+        run: npm run validate:runtime
+        env:
+          TELETON_AGENT_DIR: ${{ github.workspace }}/.teleton-agent
+
+      - name: Block vulnerable plugin dependencies
+        run: npm run audit:plugins
+
+  notify:
+    needs: validate
+    if: always() && github.event_name == 'push'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v4
+        with:
+          fetch-depth: 0
+
+      - name: Notify Telegram
+        env:
+          TG_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TG_CHAT: ${{ secrets.TELEGRAM_CHAT_ID }}
+          BRANCH: ${{ github.ref_name }}
+          BEFORE_SHA: ${{ github.event.before }}
+          AFTER_SHA: ${{ github.event.after }}
+          VALIDATE_RESULT: ${{ needs.validate.result }}
+        run: |
+          set -uo pipefail
+          NULL_SHA="0000000000000000000000000000000000000000"
+
+          if [ -z "$TG_TOKEN" ] || [ -z "$TG_CHAT" ]; then
+            echo "Telegram secrets not configured, skipping"
+            exit 0
+          fi
+
+          send() {
+            local text="$1" attempt resp ra
+            for attempt in 1 2 3 4 5 6; do
+              resp=$(curl -sS -m 25 -X POST "https://api.telegram.org/bot${TG_TOKEN}/sendMessage" \
+                -d chat_id="${TG_CHAT}" -d parse_mode=HTML -d disable_web_page_preview=true \
+                --data-urlencode "text=${text}" 2>/dev/null || true)
+              case "$resp" in
+                *'"ok":true'*) return 0 ;;
+              esac
+              ra=$(printf '%s' "$resp" | grep -o '"retry_after":[0-9]*' | grep -o '[0-9]*' || true)
+              sleep "$(( ${ra:-2} + 1 ))"
+            done
+            echo "WARN: gave up sending after retries: ${text%%$'\n'*}"
+            return 1
+          }
+
+          REPO_URL="${{ github.server_url }}/${{ github.repository }}"
+          if [ "$BEFORE_SHA" = "$NULL_SHA" ] || ! git merge-base --is-ancestor "$BEFORE_SHA" "$AFTER_SHA" 2>/dev/null; then
+            COUNT=$(git rev-list --count "$AFTER_SHA")
+            RANGE="$AFTER_SHA"
+            URL="$REPO_URL/commits/$BRANCH"
+          else
+            COUNT=$(git rev-list --count "$BEFORE_SHA..$AFTER_SHA")
+            RANGE="$BEFORE_SHA..$AFTER_SHA"
+            URL="$REPO_URL/compare/$BEFORE_SHA...$AFTER_SHA"
+          fi
+
+          NOUN=commits; [ "$COUNT" = "1" ] && NOUN=commit
+          REPO_NAME=${REPO_URL##*/}
+          LABEL=$(printf '%s' "$BRANCH" | tr '[:lower:]' '[:upper:]')
+          TEXT="<b>[$LABEL] $REPO_NAME</b>"
+          if [ "$VALIDATE_RESULT" = "success" ]; then
+            printf -v TEXT '%s\n%s %s pushed to %s' "$TEXT" "$COUNT" "$NOUN" "$BRANCH"
+          else
+            printf -v TEXT '%s\nCI failed on %s (%s %s)' "$TEXT" "$BRANCH" "$COUNT" "$NOUN"
+          fi
+
+          MAX=50
+          TITLES=$(git log --reverse --max-count="$MAX" --pretty=format:'%s' "$RANGE" \
+            | sed -e 's/&/\&amp;/g' -e 's/</\&lt;/g' -e 's/>/\&gt;/g')
+          if [ "$COUNT" -gt 1 ]; then
+            if [ "$COUNT" -gt "$MAX" ]; then
+              printf -v TITLES '%s\n… and %s more' "$TITLES" "$((COUNT - MAX))"
+            fi
+            printf -v TEXT '%s\n\n<blockquote expandable>%s</blockquote>' "$TEXT" "$TITLES"
+          elif [ -n "$TITLES" ]; then
+            printf -v TEXT '%s\n\n<blockquote>%s</blockquote>' "$TEXT" "$TITLES"
+          fi
+          printf -v TEXT '%s\n\n<a href="%s">View commits</a>' "$TEXT" "$URL"
+          send "$TEXT"

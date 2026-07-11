@@ -1018,7 +1018,7 @@ const stormUnstake = {
 export const manifest = {
   name: "stormtrade",
   version: "1.0.0",
-  sdkVersion: ">=1.0.0",
+  sdkVersion: "^1.0.0",
   description: "Storm Trade perpetual futures on TON — trade crypto, stocks, forex, and commodities with up to 100x leverage.",
 };
 

@@ -20,7 +20,7 @@ const { Api } = _require("telegram");
 export const manifest = {
   name: "pic",
   version: "1.0.1",
-  sdkVersion: ">=1.0.0",
+  sdkVersion: "^1.0.0",
   description: "Search and send images in chat via Telegram's @pic inline bot (Yandex Image Search).",
 };
 

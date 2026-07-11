@@ -257,7 +257,7 @@ function parseCollections(html) {
 export const manifest = {
   name: "fragment",
   version: "1.0.0",
-  sdkVersion: ">=1.0.0",
+  sdkVersion: "^2.0.0",
   description: "Search and browse Telegram's NFT marketplace — usernames, numbers, collectible gifts, auction history",
 };
 

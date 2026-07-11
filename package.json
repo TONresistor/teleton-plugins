@@ -1,0 +1,16 @@
+{
+  "name": "teleton-plugins-catalog",
+  "version": "2.0.0",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": "^22.22.2 || ^24.15.0 || >=26.0.0"
+  },
+  "scripts": {
+    "validate": "node scripts/validate-catalog.mjs",
+    "validate:runtime": "node scripts/validate-runtime.mjs",
+    "install:plugins": "node scripts/install-plugin-deps.mjs",
+    "audit:plugins": "node scripts/audit-plugin-deps.mjs",
+    "test": "node --test tests/*.test.mjs"
+  }
+}

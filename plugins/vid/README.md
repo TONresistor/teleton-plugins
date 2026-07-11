@@ -1,5 +1,8 @@
 # @vid — Inline YouTube Search
 
+> [!WARNING]
+> Legacy SDK v1 plugin. It is quarantined and not installable from the SDK v2 marketplace.
+
 Search and send YouTube videos using Telegram's [@vid](https://t.me/vid) inline bot. Videos are sent directly in the chat and appear "via @vid", exactly like typing `@vid query` in the Telegram input field.
 
 | Tool | Description |

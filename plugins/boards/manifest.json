@@ -9,8 +9,8 @@
   },
   "license": "MIT",
   "entry": "index.js",
-  "teleton": ">=1.0.0",
-  "sdkVersion": ">=1.0.0",
+  "teleton": ">=0.9.0",
+  "sdkVersion": "^2.0.0",
   "tools": [
     { "name": "boards_list", "description": "List all boards on the forum with their thread/post counts and descriptions" },
     { "name": "boards_catalog", "description": "Get the thread catalog for a specific board" },

@@ -175,7 +175,7 @@ function resolvePool(pool) {
 export const manifest = {
   name: "evaa",
   version: "1.0.0",
-  sdkVersion: ">=1.0.0",
+  sdkVersion: "^1.0.0",
   description: "EVAA Protocol lending and borrowing on TON — supply, borrow, withdraw, repay, and liquidate across multiple pools.",
 };
 

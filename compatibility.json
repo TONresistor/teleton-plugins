@@ -1,0 +1,148 @@
+{
+  "schemaVersion": 1,
+  "targetSdkVersion": "2.0.0",
+  "plugins": {
+    "boards": {
+      "status": "supported",
+      "marketplace": true,
+      "sdkVersion": "^2.0.0"
+    },
+    "casino": {
+      "status": "supported",
+      "marketplace": true,
+      "sdkVersion": "^2.0.0"
+    },
+    "crypto-prices": {
+      "status": "supported",
+      "marketplace": true,
+      "sdkVersion": "^2.0.0"
+    },
+    "dedust": {
+      "status": "supported",
+      "marketplace": true,
+      "sdkVersion": "^2.0.0"
+    },
+    "deezer": {
+      "status": "quarantined",
+      "marketplace": false,
+      "sdkVersion": "^1.0.0",
+      "reason": "Uses the removed sdk.telegram.getRawClient() escape hatch."
+    },
+    "dyor": {
+      "status": "supported",
+      "marketplace": true,
+      "sdkVersion": "^2.0.0"
+    },
+    "evaa": {
+      "status": "quarantined",
+      "marketplace": false,
+      "sdkVersion": "^1.0.0",
+      "reason": "Reads and signs with the agent wallet mnemonic directly; requires a core transaction broker."
+    },
+    "example": {
+      "status": "supported",
+      "marketplace": false,
+      "sdkVersion": null
+    },
+    "example-sdk": {
+      "status": "supported",
+      "marketplace": false,
+      "sdkVersion": "^2.0.0"
+    },
+    "fragment": {
+      "status": "supported",
+      "marketplace": true,
+      "sdkVersion": "^2.0.0"
+    },
+    "gaspump": {
+      "status": "quarantined",
+      "marketplace": false,
+      "sdkVersion": "^1.0.0",
+      "reason": "Uses removed context.bridge access and reads the wallet mnemonic directly."
+    },
+    "geckoterminal": {
+      "status": "supported",
+      "marketplace": true,
+      "sdkVersion": "^2.0.0"
+    },
+    "giftindex": {
+      "status": "quarantined",
+      "marketplace": false,
+      "sdkVersion": "^1.0.0",
+      "reason": "Reads and signs with the agent wallet mnemonic directly; requires a core transaction broker."
+    },
+    "giftstat": {
+      "status": "supported",
+      "marketplace": true,
+      "sdkVersion": "^2.0.0"
+    },
+    "multisend": {
+      "status": "quarantined",
+      "marketplace": false,
+      "sdkVersion": "^1.0.0",
+      "reason": "Reads the mnemonic and controls a Highload wallet directly; requires a specialized signing broker."
+    },
+    "pic": {
+      "status": "quarantined",
+      "marketplace": false,
+      "sdkVersion": "^1.0.0",
+      "reason": "Uses the removed sdk.telegram.getRawClient() escape hatch."
+    },
+    "sbt": {
+      "status": "quarantined",
+      "marketplace": false,
+      "sdkVersion": "^1.0.0",
+      "reason": "Reads the mnemonic and deploys contracts directly; requires a specialized signing broker."
+    },
+    "stonfi": {
+      "status": "supported",
+      "marketplace": true,
+      "sdkVersion": "^2.0.0"
+    },
+    "stormtrade": {
+      "status": "quarantined",
+      "marketplace": false,
+      "sdkVersion": "^1.0.0",
+      "reason": "Reads and signs with the agent wallet mnemonic directly; requires a core transaction broker."
+    },
+    "swapcoffee": {
+      "status": "quarantined",
+      "marketplace": false,
+      "sdkVersion": "^1.0.0",
+      "reason": "Reads and signs with the agent wallet mnemonic directly; requires a core transaction broker."
+    },
+    "tonapi": {
+      "status": "supported",
+      "marketplace": true,
+      "sdkVersion": "^2.0.0"
+    },
+    "twitter": {
+      "status": "supported",
+      "marketplace": true,
+      "sdkVersion": "^2.0.0"
+    },
+    "vid": {
+      "status": "quarantined",
+      "marketplace": false,
+      "sdkVersion": "^1.0.0",
+      "reason": "Uses the removed sdk.telegram.getRawClient() escape hatch."
+    },
+    "voice-notes": {
+      "status": "quarantined",
+      "marketplace": false,
+      "sdkVersion": "^1.0.0",
+      "reason": "Uses the removed sdk.telegram.getRawClient() escape hatch."
+    },
+    "weather": {
+      "status": "supported",
+      "marketplace": true,
+      "sdkVersion": "^2.0.0"
+    },
+    "webdom": {
+      "status": "quarantined",
+      "marketplace": false,
+      "sdkVersion": "^1.0.0",
+      "reason": "Reads and signs with the agent wallet mnemonic directly; requires a core transaction broker."
+    }
+  }
+}

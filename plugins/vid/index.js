@@ -20,7 +20,7 @@ const { Api } = _require("telegram");
 export const manifest = {
   name: "vid",
   version: "1.0.1",
-  sdkVersion: ">=1.0.0",
+  sdkVersion: "^1.0.0",
   description: "Search and send YouTube videos in chat via Telegram's @vid inline bot.",
 };
 

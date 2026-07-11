@@ -2,7 +2,7 @@
 
 Swap tokens, browse pools, and trade on [DeDust](https://dedust.io) -- TON's #2 decentralized exchange.
 
-Read tools use the DeDust REST API. Swap tools use the `@dedust/sdk` for on-chain estimation and transaction building, signed from the agent wallet.
+Read tools use the DeDust REST API. Swap tools use the Teleton SDK v2 transaction broker; the plugin never reads wallet credentials.
 
 ## Tools
 
@@ -14,8 +14,8 @@ Read tools use the DeDust REST API. Swap tools use the `@dedust/sdk` for on-chai
 | `dedust_pool_info` | Get detailed pool info including metadata, reserves, and fees |
 | `dedust_jetton_info` | Get jetton metadata, top holders, and top traders |
 | `dedust_prices` | Get prices and liquidity data from DeDust CoinGecko tickers |
-| `dedust_swap_estimate` | Estimate swap output using on-chain pool get-methods |
-| `dedust_swap` | Execute a swap from the agent wallet |
+| `dedust_swap_estimate` | Estimate a swap through the SDK v2 DeDust broker |
+| `dedust_swap` | Execute a brokered DeDust swap |
 
 ## Install
 
@@ -46,15 +46,7 @@ Ask the AI:
 
 ## Dependencies
 
-Requires at runtime (provided by teleton):
-- `@ton/core` -- Address, beginCell, toNano, fromNano, SendMode
-- `@ton/ton` -- WalletContractV5R1, TonClient
-- `@ton/crypto` -- mnemonicToPrivateKey
-- `@dedust/sdk` -- required for `dedust_swap_estimate` and `dedust_swap` (on-chain estimation and transaction building)
-
-Agent wallet at `~/.teleton/wallet.json` is used for signing all on-chain transactions.
-
-> **Note:** The `@dedust/sdk` package must be installed in the teleton runtime for swap tools to work. Install with: `npm install @dedust/sdk`
+No plugin-local dependency is required. Teleton SDK v2 provides the DeDust quote and transaction broker capabilities.
 
 ## Schemas
 
@@ -111,7 +103,7 @@ Get prices and liquidity data for tokens from DeDust CoinGecko tickers. Use "nat
 
 ### dedust_swap_estimate
 
-Estimate swap output on DeDust using on-chain pool get-methods. Returns expected output amount and trade fee. Use "native" for TON or a jetton address.
+Estimate swap output through the Teleton SDK v2 DeDust broker. Returns expected output, minimum output, rate, fee, and pool type. Use "native" for TON or a jetton address.
 
 | Param | Type | Required | Description |
 |-------|------|----------|-------------|

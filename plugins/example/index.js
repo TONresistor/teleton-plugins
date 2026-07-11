@@ -56,7 +56,6 @@ const diceRoll = {
   //
   // params  -- the arguments the LLM chose, matching the schema above
   // context -- Teleton runtime:
-  //   context.bridge    TelegramBridge (send messages, reactions, media)
   //   context.db        SQLite database instance
   //   context.chatId    current chat ID
   //   context.senderId  Telegram user ID of whoever triggered this

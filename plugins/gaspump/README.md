@@ -1,5 +1,8 @@
 # gaspump
 
+> [!WARNING]
+> Legacy SDK v1 plugin. It is quarantined and not installable from the SDK v2 marketplace.
+
 Token launcher and trader for [Gas111](https://gas111.com) on TON -- create, trade, and monitor meme tokens.
 
 Auth is handled automatically via Telegram WebApp -- no manual tokens needed.

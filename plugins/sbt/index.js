@@ -144,7 +144,7 @@ async function getWalletAndClient() {
 export const manifest = {
   name: "sbt",
   version: "2.0.0",
-  sdkVersion: ">=1.0.0",
+  sdkVersion: "^1.0.0",
   description: "Deploy and mint Soulbound Tokens (TEP-85) on TON — non-transferable NFTs permanently bound to their owners.",
 };
 

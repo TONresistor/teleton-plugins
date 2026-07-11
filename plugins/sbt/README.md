@@ -1,5 +1,8 @@
 # sbt
 
+> [!WARNING]
+> Legacy SDK v1 plugin. It is quarantined and not installable from the SDK v2 marketplace.
+
 Deploy and mint Soulbound Tokens ([TEP-85](https://github.com/ton-blockchain/TEPs/blob/master/text/0085-sbt-standard.md)) on TON.
 
 ## Tools

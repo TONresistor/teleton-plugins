@@ -1,5 +1,8 @@
 # Multisend
 
+> [!WARNING]
+> Legacy SDK v1 plugin. It is quarantined and not installable from the SDK v2 marketplace.
+
 Batch send TON and jettons to up to 254 recipients in a single transaction via Highload Wallet v3. Ideal for airdrops, mass payments, and rewards distribution.
 
 | Tool | Description |

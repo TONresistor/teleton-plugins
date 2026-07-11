@@ -1,5 +1,8 @@
 # webdom
 
+> [!WARNING]
+> Legacy SDK v1 plugin. It is quarantined and not installable from the SDK v2 marketplace.
+
 Buy, sell, auction, and manage **.ton domains** and **Telegram usernames** on [webdom.market](https://webdom.market) -- the first dedicated marketplace for TON DNS.
 
 Read tools use the webdom REST API. Action tools sign on-chain transactions from the agent wallet, interacting with the webdom marketplace smart contracts or native TON DNS auctions.

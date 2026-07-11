@@ -9,7 +9,7 @@
   },
   "license": "MIT",
   "entry": "index.js",
-  "teleton": ">=1.0.0",
+  "teleton": ">=0.9.0",
   "tools": [
     { "name": "dice_roll", "description": "Roll configurable dice with sides, count, and modifier" },
     { "name": "random_pick", "description": "Randomly pick one item from a list of choices" }

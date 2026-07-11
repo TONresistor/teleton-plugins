@@ -101,7 +101,7 @@ function formatUser(u) {
 export const manifest = {
   name: "twitter",
   version: "3.0.0",
-  sdkVersion: ">=1.0.0",
+  sdkVersion: "^2.0.0",
   description: "X/Twitter API v2 — read (search, lookup, trends) and write (post, like, retweet, follow) with OAuth 1.0a.",
 };
 

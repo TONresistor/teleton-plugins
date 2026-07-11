@@ -16,7 +16,7 @@
 export const manifest = {
   name: "example-sdk",
   version: "1.0.0",
-  sdkVersion: ">=1.0.0",
+  sdkVersion: "^2.0.0",
   description: "SDK example — greeting counter with TON balance check",
   defaultConfig: {
     greeting: "Hello",

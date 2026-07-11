@@ -690,7 +690,7 @@ const swapPools = {
 export const manifest = {
   name: "swapcoffee",
   version: "1.0.0",
-  sdkVersion: ">=1.0.0",
+  sdkVersion: "^1.0.0",
   description: "swap.coffee DEX aggregator on TON — find optimal swap routes, execute token swaps, browse pools, and check token prices.",
 };
 

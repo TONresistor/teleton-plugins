@@ -12,7 +12,7 @@
 export const manifest = {
   name: "casino",
   version: "1.0.0",
-  sdkVersion: ">=1.0.0",
+  sdkVersion: "^2.0.0",
   description: "Slot machine and dice games with TON payments and auto-payout",
   defaultConfig: {
     min_bet: 0.1,

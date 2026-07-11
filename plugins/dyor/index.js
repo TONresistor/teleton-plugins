@@ -135,7 +135,7 @@ const TX_TYPE_MAP = {
 export const manifest = {
   name: "dyor",
   version: "1.0.0",
-  sdkVersion: ">=1.0.0",
+  sdkVersion: "^2.0.0",
   description: "TON token analytics from DYOR.io -- search, price, trust score, metrics, DEX trades, holders, pools",
 };
 

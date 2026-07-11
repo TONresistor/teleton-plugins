@@ -45,7 +45,7 @@ function resolveSymbol(input) {
 export const manifest = {
   name: "crypto-prices",
   version: "1.0.0",
-  sdkVersion: ">=1.0.0",
+  sdkVersion: "^2.0.0",
   description: "Live cryptocurrency prices and comparisons via CryptoCompare.",
 };
 

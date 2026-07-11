@@ -1,5 +1,8 @@
 # voice-notes
 
+> [!WARNING]
+> Legacy SDK v1 plugin. It is quarantined and not installable from the SDK v2 marketplace.
+
 Transcribe voice messages and video notes using Telegram Premium built-in speech-to-text — no external APIs or keys required.
 
 ## Tools

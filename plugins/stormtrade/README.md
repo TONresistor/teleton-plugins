@@ -1,5 +1,8 @@
 # stormtrade
 
+> [!WARNING]
+> Legacy SDK v1 plugin. It is quarantined and not installable from the SDK v2 marketplace.
+
 Perpetual futures trading on [Storm Trade](https://stormtrade.dev) DEX -- crypto, stocks, forex, and commodities on TON.
 
 Read tools use the Storm Trade REST API. Write tools sign transactions from the agent wallet via the Storm Trade SDK.
