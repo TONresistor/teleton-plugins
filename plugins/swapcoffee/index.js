@@ -3,31 +3,24 @@
  *
  * Find optimal swap routes, execute token swaps, browse pools, and check
  * token prices across all major TON DEXes (StonFi, DeDust, etc.).
- * Agent wallet at ~/.teleton/wallet.json signs all swap transactions.
+ * Teleton's SDK wallet broker signs all swap transactions.
  */
 
 import { createRequire } from "node:module";
-import { readFileSync, realpathSync } from "node:fs";
-import { join } from "node:path";
-import { homedir } from "node:os";
+import { realpathSync } from "node:fs";
 
 // ---------------------------------------------------------------------------
 // CJS dependencies
 // ---------------------------------------------------------------------------
 
 const _require = createRequire(realpathSync(process.argv[1]));       // core: @ton/core, @ton/ton, @ton/crypto
-const _pluginRequire = createRequire(import.meta.url);                // local: plugin-specific deps
-
-const { Cell, Address, SendMode } = _require("@ton/core");
-const { WalletContractV5R1, TonClient, internal } = _require("@ton/ton");
-const { mnemonicToPrivateKey } = _require("@ton/crypto");
+const { Cell } = _require("@ton/core");
 
 // ---------------------------------------------------------------------------
 // Constants
 // ---------------------------------------------------------------------------
 
 const API_BASE = "https://backend.swap.coffee";
-const WALLET_FILE = join(homedir(), ".teleton", "wallet.json");
 
 let _sdk = null;
 
@@ -52,41 +45,6 @@ async function swapFetch(path, opts = {}) {
     );
   }
   return res.json();
-}
-
-// ---------------------------------------------------------------------------
-// Wallet helper
-// ---------------------------------------------------------------------------
-
-async function getWalletAndClient() {
-  let walletData;
-  try {
-    walletData = JSON.parse(readFileSync(WALLET_FILE, "utf-8"));
-  } catch {
-    throw new Error("Agent wallet not found at " + WALLET_FILE);
-  }
-  if (!walletData.mnemonic || !Array.isArray(walletData.mnemonic)) {
-    throw new Error("Invalid wallet file: missing mnemonic array");
-  }
-
-  const keyPair = await mnemonicToPrivateKey(walletData.mnemonic);
-  const wallet = WalletContractV5R1.create({
-    workchain: 0,
-    publicKey: keyPair.publicKey,
-  });
-
-  let endpoint;
-  try {
-    const { getHttpEndpoint } = _pluginRequire("@orbs-network/ton-access");
-    endpoint = await getHttpEndpoint({ network: "mainnet" });
-  } catch {
-    endpoint = "https://toncenter.com/api/v2/jsonRPC";
-  }
-
-  const client = new TonClient({ endpoint });
-  const contract = client.open(wallet);
-
-  return { wallet, keyPair, client, contract };
 }
 
 // ---------------------------------------------------------------------------
@@ -262,9 +220,9 @@ const swapExecute = {
         throw new Error("No swap route found for the given token pair");
       }
 
-      // Step 2: Get wallet
-      const { wallet, keyPair, contract } = await getWalletAndClient();
-      const senderAddress = wallet.address.toString();
+      // Step 2: Get the protected core wallet address
+      const senderAddress = _sdk.ton.getAddress();
+      if (!senderAddress) throw new Error("Agent wallet is not initialized");
 
       // Step 3: Get transactions from the route
       const txBody = {
@@ -289,22 +247,16 @@ const swapExecute = {
       // Step 4: Build messages
       const messages = txData.transactions.map((tx) => {
         const body = Cell.fromBoc(Buffer.from(tx.cell, "base64"))[0];
-        return internal({
-          to: Address.parse(tx.address),
-          value: BigInt(tx.value),
+        return {
+          to: tx.address,
+          value: Number(_sdk.ton.fromNano(BigInt(tx.value))),
           body,
           bounce: true,
-        });
+        };
       });
 
-      // Step 5: Send transfer
-      const seqno = await contract.getSeqno();
-      await contract.sendTransfer({
-        seqno,
-        secretKey: keyPair.secretKey,
-        sendMode: SendMode.PAY_GAS_SEPARATELY | SendMode.IGNORE_ERRORS,
-        messages,
-      });
+      // Step 5: Send through the core transaction broker
+      const sent = await _sdk.ton.sendMessages(messages, { sendMode: 3 });
 
       return {
         success: true,
@@ -314,7 +266,8 @@ const swapExecute = {
           price_impact: routeData.price_impact,
           slippage,
           transactions_sent: txData.transactions.length,
-          seqno,
+          seqno: sent.seqno,
+          hash: sent.hash,
           wallet_address: senderAddress,
           message:
             "Swap transaction sent. Use swap_status with route_id to check completion (~30 seconds).",
@@ -689,8 +642,8 @@ const swapPools = {
 
 export const manifest = {
   name: "swapcoffee",
-  version: "1.0.0",
-  sdkVersion: "^1.0.0",
+  version: "2.0.0",
+  sdkVersion: "^2.0.0",
   description: "swap.coffee DEX aggregator on TON — find optimal swap routes, execute token swaps, browse pools, and check token prices.",
 };
 

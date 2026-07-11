@@ -1,37 +1,25 @@
 # Multisend
 
-> [!WARNING]
-> Legacy SDK v1 plugin. It is quarantined and not installable from the SDK v2 marketplace.
-
-Batch send TON and jettons to up to 254 recipients in a single transaction via Highload Wallet v3. Ideal for airdrops, mass payments, and rewards distribution.
+Batch send TON and jettons to up to 254 recipients through Highload Wallet v3. Ideal for airdrops, mass payments, and rewards distribution.
 
 | Tool | Description |
 |------|-------------|
-| `multisend_info` | Multisend wallet address, balance, deployment status, sequence state |
-| `multisend_fund` | Transfer TON from the agent wallet (V5R1) to fund the multisend wallet |
+| `multisend_info` | Highload wallet address, balance, deployment, and query sequence |
+| `multisend_fund` | Fund the Highload wallet from the agent's main wallet |
 | `multisend_batch_ton` | Send TON to up to 254 recipients in one transaction |
 | `multisend_batch_jetton` | Send jettons to up to 254 recipients in one transaction |
-| `multisend_status` | On-chain wallet state: timeout, last cleanup, subwallet ID |
+| `multisend_status` | Highload timeout, cleanup, subwallet, balance, and sequence state |
 
 ## Architecture
 
-This plugin uses a **two-wallet system**:
-
-1. **Agent wallet** (WalletContractV5R1) -- your main wallet at `~/.teleton/wallet.json`
-2. **Multisend wallet** (HighloadWalletV3) -- a separate contract derived from the same mnemonic, at a different address
-
-The multisend wallet can send up to 254 messages in a single transaction, making batch operations ~254x more efficient than sending individually. It auto-deploys on first use (just needs pre-funding).
-
-**Sequence persistence**: Query IDs are stored in `~/.teleton/multisend-sequence.json` to prevent replay collisions.
+The agent's main Wallet V5 and the Highload Wallet v3 keep their original distinct addresses. Teleton core derives both from the configured wallet, owns signing, serializes broadcasts, and persists Highload query IDs in private global state. The plugin never receives the mnemonic, private key, or sequence store.
 
 ## First use
 
-1. **Check address**: `multisend_info` shows the multisend wallet address and balance
-2. **Fund it**: `multisend_fund` transfers TON from the agent wallet to the multisend address
-3. **First batch**: `multisend_batch_ton` auto-deploys the contract on the first call
-4. **Jetton batches**: Transfer jettons to the multisend wallet, then use `multisend_batch_jetton`
-
-The multisend wallet auto-deploys when the first batch is sent -- no separate deploy step needed. Forward fees are ~2x a normal wallet (external + internal self-message), but this is offset by batching up to 254 operations.
+1. Use `multisend_info` to inspect the Highload address.
+2. Fund it with `multisend_fund`.
+3. Send a first TON batch to deploy the Highload contract.
+4. For jetton batches, transfer jettons to that Highload address first.
 
 ## Install
 
@@ -39,8 +27,6 @@ The multisend wallet auto-deploys when the first batch is sent -- no separate de
 mkdir -p ~/.teleton/plugins
 cp -r plugins/multisend ~/.teleton/plugins/
 ```
-
-Requires `@tonkite/highload-wallet-v3` installed in the teleton runtime's `node_modules/`.
 
 ## Usage examples
 
@@ -58,9 +44,9 @@ No parameters.
 
 ### multisend_fund
 
-| Param | Type | Required | Default | Description |
-|-------|------|----------|---------|-------------|
-| `amount` | string | Yes | -- | Amount in TON to transfer (e.g. "5" or "0.5") |
+| Param | Type | Required | Description |
+|-------|------|----------|-------------|
+| `amount` | string | Yes | Amount in TON to fund the Highload wallet |
 
 ### multisend_batch_ton
 

@@ -1,7 +1,7 @@
 {
   "id": "deezer",
   "name": "@DeezerMusicBot — Inline Music Search",
-  "version": "1.0.1",
+  "version": "2.0.0",
   "description": "Search and send music tracks via Telegram's @DeezerMusicBot inline bot (Deezer)",
   "author": {
     "name": "teleton",
@@ -13,7 +13,7 @@
   "tools": [
     { "name": "deezer", "description": "Search and send a music track in the current chat via @DeezerMusicBot" }
   ],
-  "sdkVersion": "^1.0.0",
+  "sdkVersion": "^2.1.0",
   "permissions": [],
   "tags": ["music", "deezer", "search", "inline-bot"],
   "repository": "https://github.com/TONresistor/teleton-plugins",

@@ -4,8 +4,8 @@
 
 <!-- teleton-catalog:badges:start -->
 [![SDK](https://img.shields.io/badge/SDK-v2-00C896.svg)](https://www.npmjs.com/package/@teleton-agent/sdk)
-[![Marketplace](https://img.shields.io/badge/marketplace-12-8B5CF6.svg)](#sdk-v2-marketplace)
-[![Catalog](https://img.shields.io/badge/catalog-26_plugins-E040FB.svg)](compatibility.json)
+[![Marketplace](https://img.shields.io/badge/marketplace-21-8B5CF6.svg)](#sdk-v2-marketplace)
+[![Catalog](https://img.shields.io/badge/catalog-23_plugins-E040FB.svg)](compatibility.json)
 <!-- teleton-catalog:badges:end -->
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 
@@ -26,9 +26,9 @@ removed raw Telegram access or direct wallet mnemonic access.
 <!-- teleton-catalog:summary:start -->
 | Status | Plugins | Meaning |
 |---|---:|---|
-| SDK v2 supported | 14 | Loads against SDK v2; 12 marketplace plugins plus 2 examples |
-| Quarantined | 12 | Preserved in source, rejected by SDK v2 and excluded from the marketplace |
-| Total | 26 | 191 tools |
+| SDK v2 supported | 23 | Loads against SDK v2; 21 marketplace plugins plus 2 examples |
+| Quarantined | 0 | Preserved in source, rejected by SDK v2 and excluded from the marketplace |
+| Total | 23 | 166 tools |
 <!-- teleton-catalog:summary:end -->
 
 <!-- teleton-catalog:marketplace:start -->
@@ -40,14 +40,23 @@ removed raw Telegram access or direct wallet mnemonic access.
 | [casino](plugins/casino/) | 4 | Slot machine and dice games with TON payments and auto-payout |
 | [crypto-prices](plugins/crypto-prices/) | 2 | Real-time cryptocurrency prices and comparison via CryptoCompare API |
 | [dedust](plugins/dedust/) | 8 | Swap tokens, browse pools, and trade on DeDust -- TON's #2 DEX |
+| [deezer](plugins/deezer/) | 1 | Search and send music tracks via Telegram's @DeezerMusicBot inline bot (Deezer) |
 | [dyor](plugins/dyor/) | 11 | TON token analytics from DYOR.io -- search, price, trust score, metrics, DEX trades, holders, pools |
 | [fragment](plugins/fragment/) | 6 | Search and browse Telegram's NFT marketplace — usernames, numbers, collectible gifts, auction history |
 | [geckoterminal](plugins/geckoterminal/) | 10 | TON DEX pool and token data -- trending, new, and top pools, trades, OHLCV, token info, batch prices |
+| [giftindex](plugins/giftindex/) | 6 | GiftIndex ODROB trading with workflow guardrails - monitor, analyze and trade the Telegram Gifts index on TON. Owner-only, corridor-enforced, post-trade verified. |
 | [giftstat](plugins/giftstat/) | 11 | Telegram gift market data -- collections, floor prices, models, stats, history |
+| [multisend](plugins/multisend/) | 5 | Batch send TON and jettons to up to 254 recipients through Teleton's protected Highload Wallet v3 broker |
+| [pic](plugins/pic/) | 1 | Search and send images via Telegram's @pic inline bot (Yandex Image Search) |
+| [sbt](plugins/sbt/) | 2 | Deploy and mint Soulbound Tokens (TEP-85) on TON |
 | [stonfi](plugins/stonfi/) | 8 | Swap tokens, browse pools, and farm on StonFi DEX -- the largest DEX on TON |
+| [stormtrade](plugins/stormtrade/) | 13 | Trade perpetual futures on Storm Trade DEX — crypto, stocks, forex, commodities |
+| [swapcoffee](plugins/swapcoffee/) | 6 | Swap tokens on TON via swap.coffee aggregator - best rates across all DEXes |
 | [tonapi](plugins/tonapi/) | 20 | TON blockchain data from TONAPI -- accounts, jettons, NFTs, prices, transactions, traces, DNS, staking |
 | [twitter](plugins/twitter/) | 24 | X/Twitter API v2 — read (search, lookup, trends) + write (post, like, retweet, follow) with OAuth 1.0a |
+| [vid](plugins/vid/) | 1 | Search and send YouTube videos via Telegram's @vid inline bot |
 | [weather](plugins/weather/) | 2 | Current weather and 7-day forecast via Open-Meteo API |
+| [webdom](plugins/webdom/) | 11 | Buy, sell, auction, and manage .ton domains and Telegram usernames on webdom.market |
 <!-- teleton-catalog:marketplace:end -->
 
 Development examples are available in [`plugins/example`](plugins/example/) and
@@ -58,21 +67,9 @@ Development examples are available in [`plugins/example`](plugins/example/) and
 <!-- teleton-catalog:quarantine:start -->
 | Plugin | Blocker |
 |---|---|
-| `deezer` | Uses the removed sdk.telegram.getRawClient() escape hatch. |
-| `evaa` | Reads and signs with the agent wallet mnemonic directly; requires a core transaction broker. |
-| `gaspump` | Uses removed context.bridge access and reads the wallet mnemonic directly. |
-| `giftindex` | Reads and signs with the agent wallet mnemonic directly; requires a core transaction broker. |
-| `multisend` | Reads the mnemonic and controls a Highload wallet directly; requires a specialized signing broker. |
-| `pic` | Uses the removed sdk.telegram.getRawClient() escape hatch. |
-| `sbt` | Reads the mnemonic and deploys contracts directly; requires a specialized signing broker. |
-| `stormtrade` | Reads and signs with the agent wallet mnemonic directly; requires a core transaction broker. |
-| `swapcoffee` | Reads and signs with the agent wallet mnemonic directly; requires a core transaction broker. |
-| `vid` | Uses the removed sdk.telegram.getRawClient() escape hatch. |
-| `voice-notes` | Uses the removed sdk.telegram.getRawClient() escape hatch. |
-| `webdom` | Reads and signs with the agent wallet mnemonic directly; requires a core transaction broker. |
 <!-- teleton-catalog:quarantine:end -->
 
-These plugins declare `sdkVersion: "^1.0.0"`, so SDK v2 rejects them before registering tools.
+Plugins listed in this section declare an incompatible SDK range, so the runtime rejects them before registering tools.
 They return to the marketplace only after migration to public SDK capabilities.
 
 ## Install

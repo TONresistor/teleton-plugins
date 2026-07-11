@@ -3,7 +3,7 @@
  *
  * Buy, sell, auction, and manage domains on webdom.market.
  * Read-only tools use the public API; action tools sign on-chain
- * transactions from the agent's wallet at ~/.teleton/wallet.json.
+ * transactions through Teleton's protected wallet broker.
  *
  * Uses Plugin SDK exclusively:
  * - sdk.storage for API response caching
@@ -21,8 +21,8 @@ import { actionTools } from "./tools/actions.js";
 
 export const manifest = {
   name: "webdom",
-  version: "1.0.0",
-  sdkVersion: "^1.0.0",
+  version: "2.0.0",
+  sdkVersion: "^2.0.0",
   description: "Buy, sell, auction, and manage .ton domains and Telegram usernames on webdom.market",
 };
 

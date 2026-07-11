@@ -1,8 +1,5 @@
 # @pic — Inline Image Search
 
-> [!WARNING]
-> Legacy SDK v1 plugin. It is quarantined and not installable from the SDK v2 marketplace.
-
 Search and send images using Telegram's [@pic](https://t.me/pic) inline bot (Yandex Image Search). Images are sent directly in the chat and appear "via @pic", exactly like typing `@pic query` in the Telegram input field.
 
 | Tool | Description |

@@ -1,8 +1,5 @@
 # giftindex
 
-> [!WARNING]
-> Legacy SDK v1 plugin. It is quarantined and not installable from the SDK v2 marketplace.
-
 Trade the [GiftIndex](https://giftindex.io) ODROB on TON -- monitor, analyze, and trade the Telegram Gifts index.
 
 Aggregates gift collection floor prices, calculates fair value, and trades GHOLD/FLOOR tokens via on-chain order books.
@@ -87,7 +84,4 @@ No parameters. Uses the agent's wallet automatically.
 
 Requires at runtime (provided by teleton):
 - `@ton/core` -- Cell building, address computation
-- `@ton/ton` -- Wallet contract, TonClient
-- `@ton/crypto` -- Mnemonic to private key
-
-Agent wallet at `~/.teleton/wallet.json` is used for signing all on-chain transactions.
+- Teleton Plugin SDK v2 -- wallet address, jetton resolution, protected transaction broker

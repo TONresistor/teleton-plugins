@@ -1,5 +1,6 @@
 import { existsSync, readFileSync, readdirSync } from "node:fs";
 import { join } from "node:path";
+import { satisfies } from "semver";
 import { pluginDirectories, readJson } from "./catalog-source.mjs";
 
 export { pluginDirectories, readJson } from "./catalog-source.mjs";
@@ -14,7 +15,6 @@ export function validateCatalog(root = process.cwd()) {
   const compatibility = readJson(join(root, "compatibility.json"));
   const directories = pluginDirectories(root);
   const compatibilityIds = Object.keys(compatibility.plugins).sort();
-  const targetSdkRange = `^${compatibility.targetSdkVersion}`;
 
   if (compatibility.schemaVersion !== 1) errors.push("compatibility.schemaVersion must be 1");
   if (!SEMVER_RE.test(compatibility.targetSdkVersion)) {
@@ -88,8 +88,14 @@ export function validateCatalog(root = process.cwd()) {
       }
     }
 
-    if (policy.status === "supported" && expectedRange && expectedRange !== targetSdkRange) {
-      errors.push(`${id}: supported SDK plugins must target ${targetSdkRange}`);
+    if (
+      policy.status === "supported" &&
+      expectedRange &&
+      !satisfies(compatibility.targetSdkVersion, expectedRange)
+    ) {
+      errors.push(
+        `${id}: SDK range ${expectedRange} does not include target ${compatibility.targetSdkVersion}`
+      );
     }
     if (policy.status === "quarantined") {
       if (policy.marketplace !== false) errors.push(`${id}: quarantined plugins cannot be listed`);

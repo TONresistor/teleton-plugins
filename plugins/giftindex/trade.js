@@ -11,35 +11,30 @@
  *
  * Price scaling: 10^4 (price=10000 means $1.0000 USDT).
  *
- * Dependencies (provided by teleton runtime):
- *   @ton/core, @ton/ton, @ton/crypto, @orbs-network/ton-access
+ * Dependency provided by teleton runtime: @ton/core
  */
 
-import { readFileSync, realpathSync } from "fs";
+import { realpathSync } from "fs";
 import { createRequire } from "module";
-import { homedir } from "os";
-import { join } from "path";
 
 // ---------------------------------------------------------------------------
 // TON dependencies (CJS packages -- use createRequire for ESM compat)
 // ---------------------------------------------------------------------------
 
 const require = createRequire(realpathSync(process.argv[1]));
-const _pluginRequire = createRequire(import.meta.url);
-
-const { beginCell, Address, SendMode } = require("@ton/core");
-const { WalletContractV5R1, TonClient, toNano, internal } = require("@ton/ton");
-const { mnemonicToPrivateKey } = require("@ton/crypto");
+const { beginCell, Address } = require("@ton/core");
 
 // ---------------------------------------------------------------------------
 // SDK logger
 // ---------------------------------------------------------------------------
 
 let _log = { info() {}, warn() {}, error() {} };
+let _ton = null;
 
 /** Initialize trade module with SDK logger. */
 export function initTrade(sdk) {
   _log = sdk.log;
+  _ton = sdk.ton;
 }
 
 // ---------------------------------------------------------------------------
@@ -79,58 +74,9 @@ const BID_OP = 0x00845746;
 /** Cancel order op */
 const CANCEL_OP = 0x3567;
 
-const WALLET_FILE = join(homedir(), ".teleton", "wallet.json");
-
-// ---------------------------------------------------------------------------
-// Wallet + client setup (same pattern as gaspump/deploy.js)
-// ---------------------------------------------------------------------------
-
-async function getWalletAndClient() {
-  let walletData;
-  try {
-    walletData = JSON.parse(readFileSync(WALLET_FILE, "utf-8"));
-  } catch {
-    throw new Error("Agent wallet not found at " + WALLET_FILE);
-  }
-  if (!walletData.mnemonic || !Array.isArray(walletData.mnemonic)) {
-    throw new Error("Invalid wallet file: missing mnemonic");
-  }
-
-  const keyPair = await mnemonicToPrivateKey(walletData.mnemonic);
-  const wallet = WalletContractV5R1.create({
-    workchain: 0,
-    publicKey: keyPair.publicKey,
-  });
-
-  let endpoint;
-  try {
-    const { getHttpEndpoint } = _pluginRequire("@orbs-network/ton-access");
-    endpoint = await getHttpEndpoint({ network: "mainnet" });
-  } catch {
-    endpoint = "https://toncenter.com/api/v2/jsonRPC";
-  }
-
-  const client = new TonClient({ endpoint });
-  const contract = client.open(wallet);
-
-  return { wallet, keyPair, client, contract };
-}
-
-/**
- * Resolve the jetton wallet address for a given owner on a jetton master.
- *
- * @param {object} client   TonClient instance
- * @param {string} jettonMaster  Jetton master contract address (raw or friendly)
- * @param {string} ownerAddress  Owner wallet address
- * @returns {Promise<Address>}
- */
-async function resolveJettonWallet(client, jettonMaster, ownerAddress) {
-  const result = await client.runMethod(
-    Address.parse(jettonMaster),
-    "get_wallet_address",
-    [{ type: "slice", cell: beginCell().storeAddress(Address.parse(ownerAddress)).endCell() }],
-  );
-  return result.stack.readAddress();
+function requireTon() {
+  if (!_ton) throw new Error("GiftIndex SDK is not initialized");
+  return _ton;
 }
 
 // ---------------------------------------------------------------------------
@@ -172,7 +118,7 @@ export function buildJettonTransferBody(queryId, amount, destination, forwardPay
     .storeAddress(destination)
     .storeUint(0, 2)                  // response_destination = addr_none
     .storeUint(0, 1)                  // no custom_payload
-    .storeCoins(toNano("0.1"))        // forward_ton_amount
+    .storeCoins(100000000n)           // forward_ton_amount
     .storeBit(true)                   // forward_payload present as ref
     .storeRef(forwardPayload)
     .endCell();
@@ -221,12 +167,14 @@ export function buildCancelBody(queryId, priority, orderType, traderAddress) {
  * @returns {Promise<{seqno: number, walletAddress: string, jettonWalletAddress: string}>}
  */
 export async function placeAskOrder(orderBook, amount, price) {
-  const { wallet, keyPair, client, contract } = await getWalletAndClient();
-  const ownerAddress = wallet.address.toString();
+  const ton = requireTon();
+  const ownerAddress = ton.getAddress();
+  if (!ownerAddress) throw new Error("Agent wallet is not initialized");
 
   // Resolve the user's index token jetton wallet (GHOLD or FLOOR depending on OB)
   const indexMaster = getIndexMaster(orderBook);
-  const jettonWallet = await resolveJettonWallet(client, indexMaster, ownerAddress);
+  const jettonWallet = await ton.getJettonWalletAddress(ownerAddress, indexMaster);
+  if (!jettonWallet) throw new Error("Could not resolve index token wallet");
 
   const forwardPayload = buildForwardPayload(ASK_OP, price);
   const body = buildJettonTransferBody(
@@ -236,26 +184,13 @@ export async function placeAskOrder(orderBook, amount, price) {
     forwardPayload,
   );
 
-  const seqno = await contract.getSeqno();
-  _log.info(`ASK order: seqno=${seqno}, ob=${orderBook}, price=${price}`);
-  await contract.sendTransfer({
-    seqno,
-    secretKey: keyPair.secretKey,
-    sendMode: SendMode.PAY_GAS_SEPARATELY | SendMode.IGNORE_ERRORS,
-    messages: [
-      internal({
-        to: jettonWallet,
-        value: toNano("0.15"),
-        body,
-        bounce: true,
-      }),
-    ],
-  });
+  const sent = await ton.send(jettonWallet, 0.15, { body, bounce: true, sendMode: 3 });
+  _log.info(`ASK order: seqno=${sent.seqno}, ob=${orderBook}, price=${price}`);
 
   return {
-    seqno,
+    seqno: sent.seqno,
     walletAddress: ownerAddress,
-    jettonWalletAddress: jettonWallet.toString(),
+    jettonWalletAddress: jettonWallet,
   };
 }
 
@@ -272,11 +207,13 @@ export async function placeAskOrder(orderBook, amount, price) {
  * @returns {Promise<{seqno: number, walletAddress: string, jettonWalletAddress: string}>}
  */
 export async function placeBidOrder(orderBook, amount, price) {
-  const { wallet, keyPair, client, contract } = await getWalletAndClient();
-  const ownerAddress = wallet.address.toString();
+  const ton = requireTon();
+  const ownerAddress = ton.getAddress();
+  if (!ownerAddress) throw new Error("Agent wallet is not initialized");
 
   // Resolve the user's USDT jetton wallet
-  const usdtJettonWallet = await resolveJettonWallet(client, USDT_MASTER, ownerAddress);
+  const usdtJettonWallet = await ton.getJettonWalletAddress(ownerAddress, USDT_MASTER);
+  if (!usdtJettonWallet) throw new Error("Could not resolve USDT wallet");
 
   const forwardPayload = buildForwardPayload(BID_OP, price);
   const body = buildJettonTransferBody(
@@ -286,26 +223,13 @@ export async function placeBidOrder(orderBook, amount, price) {
     forwardPayload,
   );
 
-  const seqno = await contract.getSeqno();
-  _log.info(`BID order: seqno=${seqno}, ob=${orderBook}, price=${price}`);
-  await contract.sendTransfer({
-    seqno,
-    secretKey: keyPair.secretKey,
-    sendMode: SendMode.PAY_GAS_SEPARATELY | SendMode.IGNORE_ERRORS,
-    messages: [
-      internal({
-        to: usdtJettonWallet,
-        value: toNano("0.15"),
-        body,
-        bounce: true,
-      }),
-    ],
-  });
+  const sent = await ton.send(usdtJettonWallet, 0.15, { body, bounce: true, sendMode: 3 });
+  _log.info(`BID order: seqno=${sent.seqno}, ob=${orderBook}, price=${price}`);
 
   return {
-    seqno,
+    seqno: sent.seqno,
     walletAddress: ownerAddress,
-    jettonWalletAddress: usdtJettonWallet.toString(),
+    jettonWalletAddress: usdtJettonWallet,
   };
 }
 
@@ -322,29 +246,17 @@ export async function placeBidOrder(orderBook, amount, price) {
  * @returns {Promise<{seqno: number, walletAddress: string}>}
  */
 export async function cancelOrder(orderBook, queryId, priority, orderType) {
-  const { wallet, keyPair, contract } = await getWalletAndClient();
-  const ownerAddress = wallet.address.toString();
+  const ton = requireTon();
+  const ownerAddress = ton.getAddress();
+  if (!ownerAddress) throw new Error("Agent wallet is not initialized");
 
   const body = buildCancelBody(BigInt(queryId), priority, orderType, ownerAddress);
 
-  const seqno = await contract.getSeqno();
-  _log.info(`CANCEL order: seqno=${seqno}, ob=${orderBook}, type=${orderType}`);
-  await contract.sendTransfer({
-    seqno,
-    secretKey: keyPair.secretKey,
-    sendMode: SendMode.PAY_GAS_SEPARATELY | SendMode.IGNORE_ERRORS,
-    messages: [
-      internal({
-        to: Address.parse(orderBook),
-        value: toNano("0.1"),
-        body,
-        bounce: true,
-      }),
-    ],
-  });
+  const sent = await ton.send(orderBook, 0.1, { body, bounce: true, sendMode: 3 });
+  _log.info(`CANCEL order: seqno=${sent.seqno}, ob=${orderBook}, type=${orderType}`);
 
   return {
-    seqno,
+    seqno: sent.seqno,
     walletAddress: ownerAddress,
   };
 }
@@ -363,13 +275,13 @@ export async function cancelOrder(orderBook, queryId, priority, orderType) {
  * @returns {{ confirmed: boolean, newSeqno?: number, elapsed: number }}
  */
 export async function verifySeqnoAdvanced(expectedSeqno, maxWaitMs = 25000, intervalMs = 3000) {
-  const { contract } = await getWalletAndClient();
+  const ton = requireTon();
   const start = Date.now();
 
   while (Date.now() - start < maxWaitMs) {
     await new Promise((r) => setTimeout(r, intervalMs));
     try {
-      const current = await contract.getSeqno();
+      const current = await ton.getSeqno();
       if (current > expectedSeqno) {
         return { confirmed: true, newSeqno: current, elapsed: Date.now() - start };
       }

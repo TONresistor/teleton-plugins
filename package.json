@@ -14,5 +14,8 @@
     "install:plugins": "node scripts/install-plugin-deps.mjs",
     "audit:plugins": "node scripts/audit-plugin-deps.mjs",
     "test": "node --test tests/*.test.mjs"
+  },
+  "dependencies": {
+    "semver": "^7.8.5"
   }
 }

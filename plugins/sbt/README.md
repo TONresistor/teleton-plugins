@@ -1,8 +1,5 @@
 # sbt
 
-> [!WARNING]
-> Legacy SDK v1 plugin. It is quarantined and not installable from the SDK v2 marketplace.
-
 Deploy and mint Soulbound Tokens ([TEP-85](https://github.com/ton-blockchain/TEPs/blob/master/text/0085-sbt-standard.md)) on TON.
 
 ## Tools
@@ -36,7 +33,7 @@ Ask the AI:
 | `description` | string | Yes | -- | Collection description |
 | `image` | string | Yes | -- | URL to collection image |
 
-Deploys from the agent wallet at `~/.teleton/wallet.json`. Cost: ~0.05 TON.
+Deploys through Teleton's protected wallet broker. Cost: ~0.05 TON.
 
 ### sbt_mint
 

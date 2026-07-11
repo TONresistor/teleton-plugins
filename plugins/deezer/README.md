@@ -1,8 +1,5 @@
 # @DeezerMusicBot — Inline Music Search
 
-> [!WARNING]
-> Legacy SDK v1 plugin. It is quarantined and not installable from the SDK v2 marketplace.
-
 Search and send music tracks using Telegram's [@DeezerMusicBot](https://t.me/DeezerMusicBot) inline bot. Tracks are sent directly in the chat and appear "via @DeezerMusicBot", exactly like typing `@DeezerMusicBot query` in the Telegram input field.
 
 | Tool | Description |

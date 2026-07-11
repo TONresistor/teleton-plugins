@@ -1,5 +1,5 @@
 {
-  "version": "2.0.0",
+  "version": "2.1.0",
   "plugins": [
     {
       "id": "boards",
@@ -56,6 +56,19 @@
       "path": "plugins/dedust"
     },
     {
+      "id": "deezer",
+      "name": "@DeezerMusicBot — Inline Music Search",
+      "description": "Search and send music tracks via Telegram's @DeezerMusicBot inline bot (Deezer)",
+      "author": "teleton",
+      "tags": [
+        "music",
+        "deezer",
+        "search",
+        "inline-bot"
+      ],
+      "path": "plugins/deezer"
+    },
+    {
       "id": "dyor",
       "name": "DYOR Token Analytics",
       "description": "TON token analytics from DYOR.io -- search, price, trust score, metrics, DEX trades, holders, pools",
@@ -101,6 +114,20 @@
       "path": "plugins/geckoterminal"
     },
     {
+      "id": "giftindex",
+      "name": "GiftIndex ODROB Trading",
+      "description": "GiftIndex ODROB trading with workflow guardrails - monitor, analyze and trade the Telegram Gifts index on TON. Owner-only, corridor-enforced, post-trade verified.",
+      "author": "teleton",
+      "tags": [
+        "giftindex",
+        "ton",
+        "trading",
+        "telegram-gifts",
+        "index"
+      ],
+      "path": "plugins/giftindex"
+    },
+    {
       "id": "giftstat",
       "name": "Giftstat Market Data",
       "description": "Telegram gift market data -- collections, floor prices, models, stats, history",
@@ -113,6 +140,45 @@
         "api"
       ],
       "path": "plugins/giftstat"
+    },
+    {
+      "id": "multisend",
+      "name": "Multisend",
+      "description": "Batch send TON and jettons to up to 254 recipients through Teleton's protected Highload Wallet v3 broker",
+      "author": "teleton",
+      "tags": [
+        "batch",
+        "ton",
+        "airdrop",
+        "wallet",
+        "transfer"
+      ],
+      "path": "plugins/multisend"
+    },
+    {
+      "id": "pic",
+      "name": "@pic — Inline Image Search",
+      "description": "Search and send images via Telegram's @pic inline bot (Yandex Image Search)",
+      "author": "teleton",
+      "tags": [
+        "images",
+        "search",
+        "inline-bot",
+        "yandex"
+      ],
+      "path": "plugins/pic"
+    },
+    {
+      "id": "sbt",
+      "name": "TON SBT",
+      "description": "Deploy and mint Soulbound Tokens (TEP-85) on TON",
+      "author": "teleton",
+      "tags": [
+        "ton",
+        "nft",
+        "sbt"
+      ],
+      "path": "plugins/sbt"
     },
     {
       "id": "stonfi",
@@ -128,6 +194,35 @@
         "farming"
       ],
       "path": "plugins/stonfi"
+    },
+    {
+      "id": "stormtrade",
+      "name": "Storm Trade Perpetual Futures",
+      "description": "Trade perpetual futures on Storm Trade DEX — crypto, stocks, forex, commodities",
+      "author": "teleton",
+      "tags": [
+        "trading",
+        "ton",
+        "defi",
+        "perpetual-futures",
+        "derivatives"
+      ],
+      "path": "plugins/stormtrade"
+    },
+    {
+      "id": "swapcoffee",
+      "name": "swap.coffee DEX Aggregator",
+      "description": "Swap tokens on TON via swap.coffee aggregator - best rates across all DEXes",
+      "author": "teleton",
+      "tags": [
+        "defi",
+        "ton",
+        "dex",
+        "swap",
+        "trading",
+        "aggregator"
+      ],
+      "path": "plugins/swapcoffee"
     },
     {
       "id": "tonapi",
@@ -161,6 +256,19 @@
       "path": "plugins/twitter"
     },
     {
+      "id": "vid",
+      "name": "@vid — Inline YouTube Search",
+      "description": "Search and send YouTube videos via Telegram's @vid inline bot",
+      "author": "teleton",
+      "tags": [
+        "videos",
+        "youtube",
+        "search",
+        "inline-bot"
+      ],
+      "path": "plugins/vid"
+    },
+    {
       "id": "weather",
       "name": "Weather Forecast",
       "description": "Current weather and 7-day forecast via Open-Meteo API",
@@ -170,6 +278,21 @@
         "utility"
       ],
       "path": "plugins/weather"
+    },
+    {
+      "id": "webdom",
+      "name": "Webdom Domain Marketplace",
+      "description": "Buy, sell, auction, and manage .ton domains and Telegram usernames on webdom.market",
+      "author": "teleton",
+      "tags": [
+        "marketplace",
+        "domains",
+        "ton",
+        "dns",
+        "nft",
+        "auction"
+      ],
+      "path": "plugins/webdom"
     }
   ]
 }

@@ -1,11 +1,8 @@
 # swapcoffee
 
-> [!WARNING]
-> Legacy SDK v1 plugin. It is quarantined and not installable from the SDK v2 marketplace.
-
 Swap tokens on TON via [swap.coffee](https://swap.coffee) DEX aggregator -- finds the best rate across STON.fi, DeDust, Tonco, Coffee DEX, and 15+ other DEXes.
 
-Read tools use the swap.coffee REST API. Write tools sign transactions from the agent wallet.
+Read tools use the swap.coffee REST API. Write tools send transactions through Teleton's protected wallet broker.
 
 ## Tools
 
@@ -48,10 +45,7 @@ Ask the AI:
 
 Requires at runtime (provided by teleton):
 - `@ton/core` -- Cell parsing, Address
-- `@ton/ton` -- WalletContractV5R1, TonClient
-- `@ton/crypto` -- mnemonicToPrivateKey
-
-Agent wallet at `~/.teleton/wallet.json` is used for signing all on-chain transactions.
+- Teleton Plugin SDK v2 -- protected transaction broker
 
 ## Schemas
 
