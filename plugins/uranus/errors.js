@@ -64,4 +64,3 @@ export function errorResult(error, log, label = "uranus") {
 export const EXIT_ERROR_CODES = Object.freeze(
   Object.fromEntries([...EXIT_ERRORS].map(([exit, [code, message]]) => [exit, { code, message }]))
 );
-

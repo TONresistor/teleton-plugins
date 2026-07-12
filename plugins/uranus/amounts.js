@@ -49,4 +49,3 @@ export function percentageString(numerator, denominator) {
   const hundredths = (BigInt(numerator) * 10_000n) / BigInt(denominator);
   return formatUnits(hundredths, 2);
 }
-
