@@ -1,9 +1,11 @@
 import assert from "node:assert/strict";
 import { createRequire } from "node:module";
 import { realpathSync } from "node:fs";
+import { resolve } from "node:path";
 import test from "node:test";
 
-process.argv[1] = realpathSync("../teleton-agent/bin/teleton.js");
+const agentDir = resolve(process.env.TELETON_AGENT_DIR ?? "../teleton-agent");
+process.argv[1] = realpathSync(resolve(agentDir, "bin/teleton.js"));
 
 const [{ tools: createDeezerTools }, { tools: createPicTools }, { tools: createVidTools }] =
   await Promise.all([

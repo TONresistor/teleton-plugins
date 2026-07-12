@@ -54,6 +54,8 @@ jobs:
 
       - name: Run catalog tests
         run: npm test
+        env:
+          TELETON_AGENT_DIR: ${{ github.workspace }}/.teleton-agent
 
       - name: Load every plugin against the current SDK
         run: npm run validate:runtime
