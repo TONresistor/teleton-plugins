@@ -5,7 +5,7 @@
 <!-- teleton-catalog:badges:start -->
 [![SDK](https://img.shields.io/badge/SDK-v2-00C896.svg)](https://www.npmjs.com/package/@teleton-agent/sdk)
 [![Marketplace](https://img.shields.io/badge/marketplace-22-8B5CF6.svg)](#sdk-v2-marketplace)
-[![Catalog](https://img.shields.io/badge/catalog-27_plugins-E040FB.svg)](compatibility.json)
+[![Catalog](https://img.shields.io/badge/catalog-26_plugins-E040FB.svg)](compatibility.json)
 <!-- teleton-catalog:badges:end -->
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 
@@ -27,8 +27,8 @@ removed raw Telegram access or direct wallet mnemonic access.
 | Status | Plugins | Meaning |
 |---|---:|---|
 | SDK v2 supported | 24 | Loads against SDK v2; 22 marketplace plugins plus 2 examples |
-| Quarantined | 3 | Preserved in source, rejected by SDK v2 and excluded from the marketplace |
-| Total | 27 | 204 tools |
+| Quarantined | 2 | Preserved in source, rejected by SDK v2 and excluded from the marketplace |
+| Total | 26 | 193 tools |
 <!-- teleton-catalog:summary:end -->
 
 <!-- teleton-catalog:marketplace:start -->
@@ -68,7 +68,6 @@ Development examples are available in [`plugins/example`](plugins/example/) and
 <!-- teleton-catalog:quarantine:start -->
 | Plugin | Blocker |
 |---|---|
-| `evaa` | Legacy SDK v1 plugin retained for older Teleton agents; direct wallet signing is incompatible with SDK v2. |
 | `gaspump` | Legacy SDK v1 plugin retained for older Teleton agents; raw bridge and wallet access are incompatible with SDK v2. |
 | `voice-notes` | Legacy SDK v1 plugin retained for older Teleton agents; raw Telegram client access is incompatible with SDK v2. |
 <!-- teleton-catalog:quarantine:end -->

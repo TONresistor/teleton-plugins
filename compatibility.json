@@ -32,12 +32,6 @@
       "marketplace": true,
       "sdkVersion": "^2.0.0"
     },
-    "evaa": {
-      "status": "quarantined",
-      "marketplace": false,
-      "sdkVersion": "^1.0.0",
-      "reason": "Legacy SDK v1 plugin retained for older Teleton agents; direct wallet signing is incompatible with SDK v2."
-    },
     "example": {
       "status": "supported",
       "marketplace": false,
