@@ -11,7 +11,7 @@ function sleep(ms) {
 export const manifest = {
   name: "voice-notes",
   version: "1.0.0",
-  sdkVersion: ">=1.0.0",
+  sdkVersion: "^1.0.0",
   description: "Transcribe voice messages and video notes using Telegram Premium speech-to-text.",
 };
 

@@ -33,7 +33,7 @@ Ask the AI:
 | `description` | string | Yes | -- | Collection description |
 | `image` | string | Yes | -- | URL to collection image |
 
-Deploys from the agent wallet at `~/.teleton/wallet.json`. Cost: ~0.05 TON.
+Deploys through Teleton's protected wallet broker. Cost: ~0.05 TON.
 
 ### sbt_mint
 

@@ -1,11 +1,9 @@
 /**
  * TON SBT plugin — deploy and mint Soulbound Tokens (TEP-85)
  *
- * Uses @ton/core for cell building and the agent wallet
- * at ~/.teleton/wallet.json for signing transactions.
+ * Uses @ton/core for cell building and Teleton's SDK transaction broker.
  *
- * Dependencies (provided by teleton runtime):
- *   @ton/core, @ton/ton, @ton/crypto, @orbs-network/ton-access
+ * Dependency provided by teleton runtime: @ton/core
  */
 
 import { createHash } from "crypto";
@@ -13,25 +11,19 @@ import { readFileSync, realpathSync } from "fs";
 import { fileURLToPath } from "url";
 import { createRequire } from "module";
 import { dirname, join } from "path";
-import { homedir } from "os";
 
 // ---------------------------------------------------------------------------
 // TON dependencies (CJS packages — use createRequire for ESM compat)
 // ---------------------------------------------------------------------------
 
 const require = createRequire(realpathSync(process.argv[1]));
-const _pluginRequire = createRequire(import.meta.url);
-
-const { Cell, Address, beginCell, Dictionary, contractAddress, SendMode } = require("@ton/core");
-const { WalletContractV5R1, TonClient, toNano, internal } = require("@ton/ton");
-const { mnemonicToPrivateKey } = require("@ton/crypto");
+const { Cell, Address, beginCell, Dictionary, contractAddress, TupleReader } = require("@ton/core");
 
 // ---------------------------------------------------------------------------
 // Constants
 // ---------------------------------------------------------------------------
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
-const WALLET_FILE = join(homedir(), ".teleton", "wallet.json");
 
 const SBT_ITEM_CODE = Cell.fromBoc(
   Buffer.from(readFileSync(join(__dirname, "sbt_item_code.boc.b64"), "utf-8").trim(), "base64"),
@@ -100,41 +92,6 @@ function extractCollectionImage(metaCell) {
   }
 }
 
-// ---------------------------------------------------------------------------
-// Wallet setup
-// ---------------------------------------------------------------------------
-
-async function getWalletAndClient() {
-  let walletData;
-  try {
-    walletData = JSON.parse(readFileSync(WALLET_FILE, "utf-8"));
-  } catch {
-    throw new Error("Agent wallet not found at " + WALLET_FILE);
-  }
-  if (!walletData.mnemonic || !Array.isArray(walletData.mnemonic)) {
-    throw new Error("Invalid wallet file: missing mnemonic");
-  }
-
-  const keyPair = await mnemonicToPrivateKey(walletData.mnemonic);
-  const wallet = WalletContractV5R1.create({
-    workchain: 0,
-    publicKey: keyPair.publicKey,
-  });
-
-  let endpoint;
-  try {
-    const { getHttpEndpoint } = _pluginRequire("@orbs-network/ton-access");
-    endpoint = await getHttpEndpoint({ network: "mainnet" });
-  } catch {
-    endpoint = "https://toncenter.com/api/v2/jsonRPC";
-  }
-
-  const client = new TonClient({ endpoint });
-  const contract = client.open(wallet);
-
-  return { wallet, keyPair, client, contract };
-}
-
 // ═══════════════════════════════════════════════════════════════════════════
 // TOOLS
 // ═══════════════════════════════════════════════════════════════════════════
@@ -144,7 +101,7 @@ async function getWalletAndClient() {
 export const manifest = {
   name: "sbt",
   version: "2.0.0",
-  sdkVersion: ">=1.0.0",
+  sdkVersion: "^2.0.0",
   description: "Deploy and mint Soulbound Tokens (TEP-85) on TON — non-transferable NFTs permanently bound to their owners.",
 };
 
@@ -169,8 +126,9 @@ const sbtDeployCollection = {
   },
   execute: async (params) => {
     try {
-      const { wallet, keyPair, contract } = await getWalletAndClient();
-      const seqno = await contract.getSeqno();
+      const walletAddress = sdk.ton.getAddress();
+      if (!walletAddress) throw new Error("Agent wallet is not initialized");
+      const wallet = Address.parse(walletAddress);
 
       const collectionMetaCell = buildContentDict({
         name: params.name,
@@ -186,11 +144,11 @@ const sbtDeployCollection = {
       const royaltyCell = beginCell()
         .storeUint(0, 16)
         .storeUint(1000, 16)
-        .storeAddress(wallet.address)
+        .storeAddress(wallet)
         .endCell();
 
       const data = beginCell()
-        .storeAddress(wallet.address)
+        .storeAddress(wallet)
         .storeUint(0, 64)
         .storeRef(contentCell)
         .storeRef(SBT_ITEM_CODE)
@@ -200,20 +158,12 @@ const sbtDeployCollection = {
       const stateInit = { code: COLLECTION_CODE, data };
       const address = contractAddress(0, stateInit);
 
-      sdk.log.info("sbt_deploy_collection: deploying collection", params.name, "from wallet", wallet.address.toString());
+      sdk.log.info("sbt_deploy_collection: deploying collection", params.name, "from wallet", walletAddress);
 
-      await contract.sendTransfer({
-        seqno,
-        secretKey: keyPair.secretKey,
-        sendMode: SendMode.PAY_GAS_SEPARATELY | SendMode.IGNORE_ERRORS,
-        messages: [
-          internal({
-            to: address,
-            value: toNano("0.05"),
-            init: stateInit,
-            bounce: false,
-          }),
-        ],
+      const sent = await sdk.ton.send(address.toString(), 0.05, {
+        stateInit,
+        bounce: false,
+        sendMode: 3,
       });
 
       sdk.log.info("sbt_deploy_collection: deployed at", address.toString());
@@ -222,8 +172,9 @@ const sbtDeployCollection = {
         success: true,
         data: {
           collection_address: address.toString(),
-          seqno,
-          wallet_address: wallet.address.toString(),
+          seqno: sent.seqno,
+          hash: sent.hash,
+          wallet_address: walletAddress,
           explorer: "https://tonviewer.com/" + address.toString(),
         },
       };
@@ -256,13 +207,15 @@ const sbtMint = {
   },
   execute: async (params) => {
     try {
-      const { wallet, keyPair, client, contract } = await getWalletAndClient();
-      const seqno = await contract.getSeqno();
+      const walletAddress = sdk.ton.getAddress();
+      if (!walletAddress) throw new Error("Agent wallet is not initialized");
+      const wallet = Address.parse(walletAddress);
 
       const collectionAddr = Address.parse(params.collection_address);
-      const result = await client.runMethod(collectionAddr, "get_collection_data");
-      const nextItemIndex = result.stack.readBigNumber();
-      const collectionContent = result.stack.readCell();
+      const result = await sdk.ton.runGetMethod(collectionAddr.toString(), "get_collection_data");
+      const stack = new TupleReader(result.stack);
+      const nextItemIndex = stack.readBigNumber();
+      const collectionContent = stack.readCell();
 
       let image = params.image;
       if (!image) {
@@ -277,7 +230,7 @@ const sbtMint = {
 
       const authority = params.authority_address
         ? Address.parse(params.authority_address)
-        : wallet.address;
+        : wallet;
 
       const itemPayloadCell = beginCell()
         .storeAddress(Address.parse(params.owner_address))
@@ -291,25 +244,17 @@ const sbtMint = {
         .storeUint(1, 32)
         .storeUint(0, 64)
         .storeUint(nextItemIndex, 64)
-        .storeCoins(toNano("0.05"))
+        .storeCoins(50000000n)
         .storeRef(itemPayloadCell)
         .endCell();
 
-      await contract.sendTransfer({
-        seqno,
-        secretKey: keyPair.secretKey,
-        sendMode: SendMode.PAY_GAS_SEPARATELY | SendMode.IGNORE_ERRORS,
-        messages: [
-          internal({
-            to: collectionAddr,
-            value: toNano("0.1"),
-            body: mintBody,
-            bounce: true,
-          }),
-        ],
+      const sent = await sdk.ton.send(collectionAddr.toString(), 0.1, {
+        body: mintBody,
+        bounce: true,
+        sendMode: 3,
       });
 
-      sdk.log.info("sbt_mint: minted item #" + nextItemIndex.toString(), "seqno", seqno);
+      sdk.log.info("sbt_mint: minted item #" + nextItemIndex.toString(), "seqno", sent.seqno);
 
       return {
         success: true,
@@ -319,8 +264,9 @@ const sbtMint = {
           owner: params.owner_address,
           authority: authority.toString(),
           image: image || null,
-          seqno,
-          wallet_address: wallet.address.toString(),
+          seqno: sent.seqno,
+          hash: sent.hash,
+          wallet_address: walletAddress,
         },
       };
     } catch (err) {

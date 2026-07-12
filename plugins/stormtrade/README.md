@@ -2,7 +2,7 @@
 
 Perpetual futures trading on [Storm Trade](https://stormtrade.dev) DEX -- crypto, stocks, forex, and commodities on TON.
 
-Read tools use the Storm Trade REST API. Write tools sign transactions from the agent wallet via the Storm Trade SDK.
+Read tools use the Storm Trade REST API. Write tools build transactions with the Storm Trade SDK and send them through Teleton's protected wallet broker.
 
 ## Tools
 
@@ -57,11 +57,9 @@ Ask the AI:
 
 Requires at runtime (provided by teleton):
 - `@ton/core` -- Cell building, address computation
-- `@ton/ton` -- Wallet contract, TonClient
-- `@ton/crypto` -- Mnemonic to private key
+- `@ton/ton` -- read-only TonClient used by the protocol SDK
 - `@storm-trade/sdk` -- Position/order building, vault configs
-
-Agent wallet at `~/.teleton/wallet.json` is used for signing all on-chain transactions.
+- Teleton Plugin SDK v2 -- protected transaction broker
 
 ## Schemas
 

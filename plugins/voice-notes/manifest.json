@@ -9,11 +9,11 @@
   },
   "license": "MIT",
   "entry": "index.js",
-  "teleton": ">=1.0.0",
+  "teleton": ">=0.9.0",
   "tools": [
     { "name": "voice_transcribe", "description": "Transcribe a voice message or video note to text" }
   ],
-  "sdkVersion": ">=1.0.0",
+  "sdkVersion": "^1.0.0",
   "permissions": [],
   "tags": ["telegram", "voice", "transcription"],
   "repository": "https://github.com/TONresistor/teleton-plugins",

@@ -84,7 +84,4 @@ No parameters. Uses the agent's wallet automatically.
 
 Requires at runtime (provided by teleton):
 - `@ton/core` -- Cell building, address computation
-- `@ton/ton` -- Wallet contract, TonClient
-- `@ton/crypto` -- Mnemonic to private key
-
-Agent wallet at `~/.teleton/wallet.json` is used for signing all on-chain transactions.
+- Teleton Plugin SDK v2 -- wallet address, jetton resolution, protected transaction broker

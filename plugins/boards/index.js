@@ -13,7 +13,7 @@ import http from "node:http";
 export const manifest = {
   name: "boards",
   version: "1.0.0",
-  sdkVersion: ">=1.0.0",
+  sdkVersion: "^2.0.0",
   description: "Browse and participate in the boards.ton decentralized forum using x402 TON payments",
   defaultConfig: {},
 };

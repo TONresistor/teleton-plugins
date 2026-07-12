@@ -653,6 +653,15 @@ const gasKing = {
 // Export
 // ---------------------------------------------------------------------------
 
+// This legacy plugin requires raw Telegram WebApp auth and direct wallet
+// signing. The explicit SDK v1 range makes SDK v2 reject it before tools load.
+export const manifest = {
+  name: "gaspump",
+  version: "2.0.0",
+  sdkVersion: "^1.0.0",
+  description: "Launch, trade, and manage meme tokens on Gas111/TON.",
+};
+
 export const tools = [
   gasLaunchToken,
   gasTokenInfo,

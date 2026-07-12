@@ -1,0 +1,9 @@
+{
+  "name": "@teleton/plugin-uranus",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "@ton/core": "^0.63.1"
+  }
+}

@@ -122,7 +122,7 @@ function makePoolListTool(name, description, pathSuffix, sdk) {
 export const manifest = {
   name: "geckoterminal",
   version: "1.0.0",
-  sdkVersion: ">=1.0.0",
+  sdkVersion: "^2.0.0",
   description: "TON DEX pool and token data -- trending, new, and top pools, trades, OHLCV, token info, batch prices",
 };
 

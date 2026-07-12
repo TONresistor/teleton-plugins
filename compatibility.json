@@ -1,0 +1,138 @@
+{
+  "schemaVersion": 1,
+  "targetSdkVersion": "2.1.0",
+  "plugins": {
+    "boards": {
+      "status": "supported",
+      "marketplace": true,
+      "sdkVersion": "^2.0.0"
+    },
+    "casino": {
+      "status": "supported",
+      "marketplace": true,
+      "sdkVersion": "^2.0.0"
+    },
+    "crypto-prices": {
+      "status": "supported",
+      "marketplace": true,
+      "sdkVersion": "^2.0.0"
+    },
+    "dedust": {
+      "status": "supported",
+      "marketplace": true,
+      "sdkVersion": "^2.0.0"
+    },
+    "deezer": {
+      "status": "supported",
+      "marketplace": true,
+      "sdkVersion": "^2.1.0"
+    },
+    "dyor": {
+      "status": "supported",
+      "marketplace": true,
+      "sdkVersion": "^2.0.0"
+    },
+    "example": {
+      "status": "supported",
+      "marketplace": false,
+      "sdkVersion": null
+    },
+    "example-sdk": {
+      "status": "supported",
+      "marketplace": false,
+      "sdkVersion": "^2.0.0"
+    },
+    "fragment": {
+      "status": "supported",
+      "marketplace": true,
+      "sdkVersion": "^2.0.0"
+    },
+    "gaspump": {
+      "status": "quarantined",
+      "marketplace": false,
+      "sdkVersion": "^1.0.0",
+      "reason": "Legacy SDK v1 plugin retained for older Teleton agents; raw bridge and wallet access are incompatible with SDK v2."
+    },
+    "geckoterminal": {
+      "status": "supported",
+      "marketplace": true,
+      "sdkVersion": "^2.0.0"
+    },
+    "giftindex": {
+      "status": "supported",
+      "marketplace": true,
+      "sdkVersion": "^2.0.0"
+    },
+    "giftstat": {
+      "status": "supported",
+      "marketplace": true,
+      "sdkVersion": "^2.0.0"
+    },
+    "multisend": {
+      "status": "supported",
+      "marketplace": true,
+      "sdkVersion": "^2.1.0"
+    },
+    "pic": {
+      "status": "supported",
+      "marketplace": true,
+      "sdkVersion": "^2.1.0"
+    },
+    "sbt": {
+      "status": "supported",
+      "marketplace": true,
+      "sdkVersion": "^2.0.0"
+    },
+    "stonfi": {
+      "status": "supported",
+      "marketplace": true,
+      "sdkVersion": "^2.0.0"
+    },
+    "stormtrade": {
+      "status": "supported",
+      "marketplace": true,
+      "sdkVersion": "^2.0.0"
+    },
+    "swapcoffee": {
+      "status": "supported",
+      "marketplace": true,
+      "sdkVersion": "^2.0.0"
+    },
+    "tonapi": {
+      "status": "supported",
+      "marketplace": true,
+      "sdkVersion": "^2.0.0"
+    },
+    "twitter": {
+      "status": "supported",
+      "marketplace": true,
+      "sdkVersion": "^2.0.0"
+    },
+    "uranus": {
+      "status": "supported",
+      "marketplace": true,
+      "sdkVersion": "^2.1.0"
+    },
+    "vid": {
+      "status": "supported",
+      "marketplace": true,
+      "sdkVersion": "^2.1.0"
+    },
+    "voice-notes": {
+      "status": "quarantined",
+      "marketplace": false,
+      "sdkVersion": "^1.0.0",
+      "reason": "Legacy SDK v1 plugin retained for older Teleton agents; raw Telegram client access is incompatible with SDK v2."
+    },
+    "weather": {
+      "status": "supported",
+      "marketplace": true,
+      "sdkVersion": "^2.0.0"
+    },
+    "webdom": {
+      "status": "supported",
+      "marketplace": true,
+      "sdkVersion": "^2.0.0"
+    }
+  }
+}

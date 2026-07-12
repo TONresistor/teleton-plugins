@@ -75,7 +75,7 @@ function makePaginatedTool(name, description, path, sdk) {
 export const manifest = {
   name: "giftstat",
   version: "1.0.1",
-  sdkVersion: ">=1.0.0",
+  sdkVersion: "^2.0.0",
   description: "Telegram gift market data -- collections, floor prices, models, stats, history",
 };
 

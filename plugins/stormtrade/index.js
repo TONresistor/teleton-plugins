@@ -3,13 +3,11 @@
  *
  * Trade crypto, stocks, forex, and commodities with up to 100x leverage.
  * Uses @storm-trade/sdk for on-chain writes and REST API for reads.
- * Agent wallet at ~/.teleton/wallet.json signs all transactions.
+ * Teleton's SDK wallet broker signs all transactions.
  */
 
 import { createRequire } from "node:module";
-import { readFileSync, realpathSync } from "node:fs";
-import { join } from "node:path";
-import { homedir } from "node:os";
+import { realpathSync } from "node:fs";
 
 // ---------------------------------------------------------------------------
 // CJS dependencies
@@ -18,9 +16,8 @@ import { homedir } from "node:os";
 const _require = createRequire(realpathSync(process.argv[1]));       // core: @ton/core, @ton/ton, @ton/crypto
 const _pluginRequire = createRequire(import.meta.url);                // local: plugin-specific deps
 
-const { Address, SendMode } = _require("@ton/core");
-const { WalletContractV5R1, TonClient, toNano, internal } = _require("@ton/ton");
-const { mnemonicToPrivateKey } = _require("@ton/crypto");
+const { Address } = _require("@ton/core");
+const { TonClient } = _require("@ton/ton");
 const {
   StormSDK,
   Direction,
@@ -35,7 +32,6 @@ const {
 // ---------------------------------------------------------------------------
 
 const API_BASE = "https://api5.storm.tg/api";
-const WALLET_FILE = join(homedir(), ".teleton", "wallet.json");
 
 let _sdk = null;
 
@@ -59,24 +55,8 @@ async function stormFetch(path, params = {}) {
   return res.json();
 }
 
-/** Read agent wallet, create TonClient, open wallet contract. */
-async function getWalletAndClient() {
-  let walletData;
-  try {
-    walletData = JSON.parse(readFileSync(WALLET_FILE, "utf-8"));
-  } catch {
-    throw new Error("Agent wallet not found at " + WALLET_FILE);
-  }
-  if (!walletData.mnemonic || !Array.isArray(walletData.mnemonic)) {
-    throw new Error("Invalid wallet file: missing mnemonic array");
-  }
-
-  const keyPair = await mnemonicToPrivateKey(walletData.mnemonic);
-  const wallet = WalletContractV5R1.create({
-    workchain: 0,
-    publicKey: keyPair.publicKey,
-  });
-
+/** Create the read-only TonClient required by the Storm protocol SDK. */
+async function getClient() {
   let endpoint;
   try {
     const { getHttpEndpoint } = _pluginRequire("@orbs-network/ton-access");
@@ -85,16 +65,23 @@ async function getWalletAndClient() {
     endpoint = "https://toncenter.com/api/v2/jsonRPC";
   }
 
-  const client = new TonClient({ endpoint });
-  const contract = client.open(wallet);
-
-  return { wallet, keyPair, client, contract };
+  return new TonClient({ endpoint });
 }
 
 /** Get agent's friendly wallet address. */
 function getAgentAddress() {
-  const data = JSON.parse(readFileSync(WALLET_FILE, "utf-8"));
-  return data.address;
+  const address = _sdk?.ton?.getAddress();
+  if (!address) throw new Error("Agent wallet is not initialized");
+  return address;
+}
+
+async function sendTx(txParams) {
+  const value = Number(_sdk.ton.fromNano(txParams.value));
+  return _sdk.ton.send(txParams.to.toString(), value, {
+    body: txParams.body,
+    bounce: true,
+    sendMode: 3,
+  });
 }
 
 /** Return StormSDK instance for the given vault type. */
@@ -409,9 +396,9 @@ const stormOpenPosition = {
 
   execute: async (params) => {
     try {
-      const { wallet, keyPair, client, contract } = await getWalletAndClient();
+      const client = await getClient();
       const sdk = getSDK(params.vault, client);
-      const traderAddress = wallet.address;
+      const traderAddress = Address.parse(getAgentAddress());
       const baseAsset = parseBaseAsset(params.market);
       const direction = parseDirection(params.direction);
 
@@ -429,15 +416,7 @@ const stormOpenPosition = {
 
       const txParams = await sdk.increasePosition(increaseOpts);
 
-      const seqno = await contract.getSeqno();
-      await contract.sendTransfer({
-        seqno,
-        secretKey: keyPair.secretKey,
-        sendMode: SendMode.PAY_GAS_SEPARATELY | SendMode.IGNORE_ERRORS,
-        messages: [
-          internal({ to: txParams.to, value: txParams.value, body: txParams.body, bounce: true }),
-        ],
-      });
+      const sent = await sendTx(txParams);
 
       return {
         success: true,
@@ -446,8 +425,8 @@ const stormOpenPosition = {
           direction: params.direction,
           amount: params.amount,
           leverage: params.leverage,
-          seqno,
-          walletAddress: wallet.address.toString(),
+          seqno: sent.seqno,
+          walletAddress: traderAddress.toString(),
           has_stop_loss: !!params.stop_loss,
           has_take_profit: !!params.take_profit,
           message: "Position open tx sent. Check status after ~15 seconds with storm_positions.",
@@ -491,9 +470,9 @@ const stormClosePosition = {
 
   execute: async (params) => {
     try {
-      const { wallet, keyPair, client, contract } = await getWalletAndClient();
+      const client = await getClient();
       const sdk = getSDK(params.vault, client);
-      const traderAddress = wallet.address;
+      const traderAddress = Address.parse(getAgentAddress());
       const baseAsset = parseBaseAsset(params.market);
       const direction = parseDirection(params.direction);
 
@@ -517,15 +496,7 @@ const stormClosePosition = {
         size,
       });
 
-      const seqno = await contract.getSeqno();
-      await contract.sendTransfer({
-        seqno,
-        secretKey: keyPair.secretKey,
-        sendMode: SendMode.PAY_GAS_SEPARATELY | SendMode.IGNORE_ERRORS,
-        messages: [
-          internal({ to: txParams.to, value: txParams.value, body: txParams.body, bounce: true }),
-        ],
-      });
+      const sent = await sendTx(txParams);
 
       return {
         success: true,
@@ -533,8 +504,8 @@ const stormClosePosition = {
           market: params.market,
           direction: params.direction,
           size: params.size || "1",
-          seqno,
-          walletAddress: wallet.address.toString(),
+          seqno: sent.seqno,
+          walletAddress: traderAddress.toString(),
           message: "Close position tx sent. Check status after ~15 seconds.",
         },
       };
@@ -572,9 +543,9 @@ const stormAddMargin = {
 
   execute: async (params) => {
     try {
-      const { wallet, keyPair, client, contract } = await getWalletAndClient();
+      const client = await getClient();
       const sdk = getSDK(params.vault, client);
-      const traderAddress = wallet.address;
+      const traderAddress = Address.parse(getAgentAddress());
       const baseAsset = parseBaseAsset(params.market);
       const direction = parseDirection(params.direction);
 
@@ -585,15 +556,7 @@ const stormAddMargin = {
         amount: parseAmount(params.amount, params.vault),
       });
 
-      const seqno = await contract.getSeqno();
-      await contract.sendTransfer({
-        seqno,
-        secretKey: keyPair.secretKey,
-        sendMode: SendMode.PAY_GAS_SEPARATELY | SendMode.IGNORE_ERRORS,
-        messages: [
-          internal({ to: txParams.to, value: txParams.value, body: txParams.body, bounce: true }),
-        ],
-      });
+      const sent = await sendTx(txParams);
 
       return {
         success: true,
@@ -601,8 +564,8 @@ const stormAddMargin = {
           market: params.market,
           direction: params.direction,
           amount: params.amount,
-          seqno,
-          walletAddress: wallet.address.toString(),
+          seqno: sent.seqno,
+          walletAddress: traderAddress.toString(),
           message: "Add margin tx sent. Check position after ~15 seconds.",
         },
       };
@@ -639,9 +602,9 @@ const stormRemoveMargin = {
 
   execute: async (params) => {
     try {
-      const { wallet, keyPair, client, contract } = await getWalletAndClient();
+      const client = await getClient();
       const sdk = getSDK(params.vault, client);
-      const traderAddress = wallet.address;
+      const traderAddress = Address.parse(getAgentAddress());
       const baseAsset = parseBaseAsset(params.market);
       const direction = parseDirection(params.direction);
 
@@ -652,15 +615,7 @@ const stormRemoveMargin = {
         amount: numToNano(parseNum(params.amount, "amount")),
       });
 
-      const seqno = await contract.getSeqno();
-      await contract.sendTransfer({
-        seqno,
-        secretKey: keyPair.secretKey,
-        sendMode: SendMode.PAY_GAS_SEPARATELY | SendMode.IGNORE_ERRORS,
-        messages: [
-          internal({ to: txParams.to, value: txParams.value, body: txParams.body, bounce: true }),
-        ],
-      });
+      const sent = await sendTx(txParams);
 
       return {
         success: true,
@@ -668,8 +623,8 @@ const stormRemoveMargin = {
           market: params.market,
           direction: params.direction,
           amount: params.amount,
-          seqno,
-          walletAddress: wallet.address.toString(),
+          seqno: sent.seqno,
+          walletAddress: traderAddress.toString(),
           message: "Remove margin tx sent. Check position after ~15 seconds.",
         },
       };
@@ -745,9 +700,9 @@ const stormCreateOrder = {
 
   execute: async (params) => {
     try {
-      const { wallet, keyPair, client, contract } = await getWalletAndClient();
+      const client = await getClient();
       const sdk = getSDK(params.vault, client);
-      const traderAddress = wallet.address;
+      const traderAddress = Address.parse(getAgentAddress());
       const baseAsset = parseBaseAsset(params.market);
       const direction = parseDirection(params.direction);
       const expiration = params.expiration || 86400 * 30;
@@ -788,15 +743,7 @@ const stormCreateOrder = {
 
       const txParams = await sdk.createOrder(orderOpts);
 
-      const seqno = await contract.getSeqno();
-      await contract.sendTransfer({
-        seqno,
-        secretKey: keyPair.secretKey,
-        sendMode: SendMode.PAY_GAS_SEPARATELY | SendMode.IGNORE_ERRORS,
-        messages: [
-          internal({ to: txParams.to, value: txParams.value, body: txParams.body, bounce: true }),
-        ],
-      });
+      const sent = await sendTx(txParams);
 
       return {
         success: true,
@@ -804,8 +751,8 @@ const stormCreateOrder = {
           market: params.market,
           direction: params.direction,
           order_type: params.order_type,
-          seqno,
-          walletAddress: wallet.address.toString(),
+          seqno: sent.seqno,
+          walletAddress: traderAddress.toString(),
           message: "Order creation tx sent. Check orders after ~15 seconds.",
         },
       };
@@ -851,9 +798,9 @@ const stormCancelOrder = {
 
   execute: async (params) => {
     try {
-      const { wallet, keyPair, client, contract } = await getWalletAndClient();
+      const client = await getClient();
       const sdk = getSDK(params.vault, client);
-      const traderAddress = wallet.address;
+      const traderAddress = Address.parse(getAgentAddress());
       const baseAsset = parseBaseAsset(params.market);
       const direction = parseDirection(params.direction);
 
@@ -865,15 +812,7 @@ const stormCancelOrder = {
         direction,
       });
 
-      const seqno = await contract.getSeqno();
-      await contract.sendTransfer({
-        seqno,
-        secretKey: keyPair.secretKey,
-        sendMode: SendMode.PAY_GAS_SEPARATELY | SendMode.IGNORE_ERRORS,
-        messages: [
-          internal({ to: txParams.to, value: txParams.value, body: txParams.body, bounce: true }),
-        ],
-      });
+      const sent = await sendTx(txParams);
 
       return {
         success: true,
@@ -882,8 +821,8 @@ const stormCancelOrder = {
           direction: params.direction,
           order_type: params.order_type,
           order_index: params.order_index ?? 0,
-          seqno,
-          walletAddress: wallet.address.toString(),
+          seqno: sent.seqno,
+          walletAddress: traderAddress.toString(),
           message: "Cancel order tx sent. Check orders after ~15 seconds.",
         },
       };
@@ -918,32 +857,24 @@ const stormStake = {
 
   execute: async (params) => {
     try {
-      const { wallet, keyPair, client, contract } = await getWalletAndClient();
+      const client = await getClient();
       const sdk = getSDK(params.vault, client);
-      const userAddress = wallet.address;
+      const userAddress = Address.parse(getAgentAddress());
 
       const txParams = await sdk.stake({
         amount: parseAmount(params.amount, params.vault),
         userAddress,
       });
 
-      const seqno = await contract.getSeqno();
-      await contract.sendTransfer({
-        seqno,
-        secretKey: keyPair.secretKey,
-        sendMode: SendMode.PAY_GAS_SEPARATELY | SendMode.IGNORE_ERRORS,
-        messages: [
-          internal({ to: txParams.to, value: txParams.value, body: txParams.body, bounce: true }),
-        ],
-      });
+      const sent = await sendTx(txParams);
 
       return {
         success: true,
         data: {
           amount: params.amount,
           vault: params.vault || "usdt",
-          seqno,
-          walletAddress: wallet.address.toString(),
+          seqno: sent.seqno,
+          walletAddress: userAddress.toString(),
           message: "Stake tx sent. Check vault balance after ~15 seconds.",
         },
       };
@@ -977,31 +908,23 @@ const stormUnstake = {
 
   execute: async (params) => {
     try {
-      const { wallet, keyPair, client, contract } = await getWalletAndClient();
+      const client = await getClient();
       const sdk = getSDK(params.vault, client);
-      const userAddress = wallet.address;
+      const userAddress = Address.parse(getAgentAddress());
 
       const unstakeOpts = { userAddress };
       if (params.amount) unstakeOpts.amount = numToNano(parseNum(params.amount, "amount"));
       const txParams = await sdk.unstake(unstakeOpts);
 
-      const seqno = await contract.getSeqno();
-      await contract.sendTransfer({
-        seqno,
-        secretKey: keyPair.secretKey,
-        sendMode: SendMode.PAY_GAS_SEPARATELY | SendMode.IGNORE_ERRORS,
-        messages: [
-          internal({ to: txParams.to, value: txParams.value, body: txParams.body, bounce: true }),
-        ],
-      });
+      const sent = await sendTx(txParams);
 
       return {
         success: true,
         data: {
           amount: params.amount,
           vault: params.vault || "usdt",
-          seqno,
-          walletAddress: wallet.address.toString(),
+          seqno: sent.seqno,
+          walletAddress: userAddress.toString(),
           message: "Unstake tx sent. Check vault balance after ~15 seconds.",
         },
       };
@@ -1017,8 +940,8 @@ const stormUnstake = {
 
 export const manifest = {
   name: "stormtrade",
-  version: "1.0.0",
-  sdkVersion: ">=1.0.0",
+  version: "2.0.0",
+  sdkVersion: "^2.0.0",
   description: "Storm Trade perpetual futures on TON — trade crypto, stocks, forex, and commodities with up to 100x leverage.",
 };
 

@@ -4,9 +4,7 @@
  */
 
 import { createRequire } from "node:module";
-import { realpathSync, readFileSync } from "node:fs";
-import { join } from "node:path";
-import { homedir } from "node:os";
+import { realpathSync } from "node:fs";
 
 import {
   WEBDOM_MARKETPLACE,
@@ -18,15 +16,8 @@ import {
 // ---------------------------------------------------------------------------
 
 const _require = createRequire(realpathSync(process.argv[1]));
-const { Address, beginCell, toNano, SendMode } = _require("@ton/core");
-const { WalletContractV5R1, TonClient, internal } = _require("@ton/ton");
-const { mnemonicToPrivateKey } = _require("@ton/crypto");
-
-// ---------------------------------------------------------------------------
-// Constants
-// ---------------------------------------------------------------------------
-
-const WALLET_FILE = join(homedir(), ".teleton", "wallet.json");
+const { Address, beginCell, toNano } = _require("@ton/core");
+const { TonClient } = _require("@ton/ton");
 
 // ---------------------------------------------------------------------------
 // RPC endpoint resolution (same logic as core endpoint.ts)
@@ -97,20 +88,7 @@ async function getNftSaleInfo(nftAddress) {
 // ---------------------------------------------------------------------------
 
 let _log = null;
-
-function loadWalletKeyPair() {
-  let walletData;
-  try {
-    walletData = JSON.parse(readFileSync(WALLET_FILE, "utf-8"));
-  } catch (err) {
-    _log?.error("[webdom] wallet read failed:", err.message);
-    throw new Error("Agent wallet not found at " + WALLET_FILE);
-  }
-  if (!walletData.mnemonic || !Array.isArray(walletData.mnemonic)) {
-    throw new Error("Invalid wallet file: missing mnemonic array");
-  }
-  return walletData.mnemonic;
-}
+let _ton = null;
 
 async function getSaleData(saleAddr) {
   const endpoints = await getAllEndpoints();
@@ -147,94 +125,23 @@ function buildDeployFeeBody(nftAddress, queryId) {
 
 async function sendMultiMessages(messages) {
   _log?.info("[webdom] sendMultiMessages, count:", messages.length);
-
-  const mnemonic = loadWalletKeyPair();
-  const keyPair = await mnemonicToPrivateKey(mnemonic);
-  const wallet = WalletContractV5R1.create({ workchain: 0, publicKey: keyPair.publicKey });
-  _log?.info("[webdom] wallet:", wallet.address.toString({ bounceable: true }));
-
-  const endpoints = await getAllEndpoints();
-  let lastErr;
-
-  for (const ep of endpoints) {
-    try {
-      _log?.info("[webdom] trying endpoint:", ep);
-      const client = new TonClient({ endpoint: ep });
-      const contract = client.open(wallet);
-
-      const seqno = await contract.getSeqno();
-      _log?.info("[webdom] seqno:", seqno);
-
-      if (ep.includes("toncenter.com")) await new Promise((r) => setTimeout(r, 3000));
-
-      await contract.sendTransfer({
-        seqno,
-        secretKey: keyPair.secretKey,
-        sendMode: SendMode.PAY_GAS_SEPARATELY | SendMode.IGNORE_ERRORS,
-        messages,
-      });
-
-      _log?.info("[webdom] multi-message sent via", ep, "seqno:", seqno);
-      return {
-        tx_seqno: seqno,
-        wallet_address: wallet.address.toString({ bounceable: true }),
-      };
-    } catch (err) {
-      _log?.warn("[webdom] endpoint failed:", ep, err.message);
-      lastErr = err;
-      await new Promise((r) => setTimeout(r, 1000));
-    }
-  }
-
-  throw new Error("All RPC endpoints failed: " + lastErr?.message);
+  const walletAddress = _ton.getAddress();
+  if (!walletAddress) throw new Error("Agent wallet is not initialized");
+  const result = await _ton.sendMessages(messages, { sendMode: 3 });
+  return { tx_seqno: result.seqno, tx_hash: result.hash, wallet_address: walletAddress };
 }
 
 async function sendTransaction(to, value, body) {
   _log?.info("[webdom] sendTransaction to:", to.toString(), "value:", value.toString());
 
-  const mnemonic = loadWalletKeyPair();
-  const keyPair = await mnemonicToPrivateKey(mnemonic);
-  const wallet = WalletContractV5R1.create({ workchain: 0, publicKey: keyPair.publicKey });
-  _log?.info("[webdom] wallet:", wallet.address.toString({ bounceable: true }));
-
-  const endpoints = await getAllEndpoints();
-  let lastErr;
-
-  for (const ep of endpoints) {
-    try {
-      _log?.info("[webdom] trying endpoint:", ep);
-      const client = new TonClient({ endpoint: ep });
-      const contract = client.open(wallet);
-
-      const seqno = await contract.getSeqno();
-      _log?.info("[webdom] seqno:", seqno);
-
-      // toncenter rate limit without API key — need ~3s between requests
-      if (ep.includes("toncenter.com")) await new Promise((r) => setTimeout(r, 3000));
-
-      await contract.sendTransfer({
-        seqno,
-        secretKey: keyPair.secretKey,
-        sendMode: SendMode.PAY_GAS_SEPARATELY | SendMode.IGNORE_ERRORS,
-        messages: [
-          internal({ to, value, body, bounce: true }),
-        ],
-      });
-
-      _log?.info("[webdom] transaction sent via", ep, "seqno:", seqno);
-      return {
-        tx_seqno: seqno,
-        wallet_address: wallet.address.toString({ bounceable: true }),
-      };
-    } catch (err) {
-      _log?.warn("[webdom] endpoint failed:", ep, err.message);
-      lastErr = err;
-      // wait 1s before trying next endpoint
-      await new Promise((r) => setTimeout(r, 1000));
-    }
-  }
-
-  throw new Error("All RPC endpoints failed: " + lastErr?.message);
+  const walletAddress = _ton.getAddress();
+  if (!walletAddress) throw new Error("Agent wallet is not initialized");
+  const result = await _ton.send(to.toString(), Number(_ton.fromNano(value)), {
+    body,
+    bounce: true,
+    sendMode: 3,
+  });
+  return { tx_seqno: result.seqno, tx_hash: result.hash, wallet_address: walletAddress };
 }
 
 // ---------------------------------------------------------------------------
@@ -271,6 +178,7 @@ function buildNftTransferBody(newOwner, responseAddr, forwardAmount, forwardPayl
 
 export const actionTools = (sdk) => {
   _log = sdk.log;
+  _ton = sdk.ton;
 
   return [
 
@@ -414,10 +322,9 @@ export const actionTools = (sdk) => {
           .endCell();
 
         // Need wallet address for response_destination in NFT transfer
-        const mnemonic = loadWalletKeyPair();
-        const keyPair = await mnemonicToPrivateKey(mnemonic);
-        const wallet = WalletContractV5R1.create({ workchain: 0, publicKey: keyPair.publicKey });
-        const senderAddr = wallet.address;
+        const senderAddress = _ton.getAddress();
+        if (!senderAddress) throw new Error("Agent wallet is not initialized");
+        const senderAddr = Address.parse(senderAddress);
 
         // Shared query_id (timestamp ms) — marketplace matches fee to listing via this
         const queryId = Date.now();
@@ -428,18 +335,18 @@ export const actionTools = (sdk) => {
 
         // Send 2 messages in one tx: deploy fee to marketplace + NFT transfer to domain
         const result = await sendMultiMessages([
-          internal({
-            to: MARKETPLACE,
-            value: DEPLOY_FEE_VALUE,
+          {
+            to: MARKETPLACE.toString(),
+            value: Number(_ton.fromNano(DEPLOY_FEE_VALUE)),
             body: buildDeployFeeBody(domainAddr, queryId),
             bounce: true,
-          }),
-          internal({
-            to: domainAddr,
-            value: FORWARD_NFT + toNano("0.15"),
+          },
+          {
+            to: domainAddr.toString(),
+            value: Number(_ton.fromNano(FORWARD_NFT + toNano("0.15"))),
             body: nftBody,
             bounce: true,
-          }),
+          },
         ]);
 
         // Poll TONAPI for the deployed sale contract address (takes ~10-15s on-chain)
@@ -529,10 +436,9 @@ export const actionTools = (sdk) => {
           .endCell();
 
         // Need wallet address for response_destination in NFT transfer
-        const mnemonic = loadWalletKeyPair();
-        const keyPair = await mnemonicToPrivateKey(mnemonic);
-        const wallet = WalletContractV5R1.create({ workchain: 0, publicKey: keyPair.publicKey });
-        const senderAddr = wallet.address;
+        const senderAddress = _ton.getAddress();
+        if (!senderAddress) throw new Error("Agent wallet is not initialized");
+        const senderAddr = Address.parse(senderAddress);
 
         // Shared query_id — marketplace matches fee to listing via this
         const queryId = Date.now();
@@ -542,18 +448,18 @@ export const actionTools = (sdk) => {
 
         // Send 2 messages in one tx: deploy fee to marketplace + NFT transfer to domain
         const result = await sendMultiMessages([
-          internal({
-            to: MARKETPLACE,
-            value: DEPLOY_FEE_VALUE,
+          {
+            to: MARKETPLACE.toString(),
+            value: Number(_ton.fromNano(DEPLOY_FEE_VALUE)),
             body: buildDeployFeeBody(domainAddr, queryId),
             bounce: true,
-          }),
-          internal({
-            to: domainAddr,
-            value: FORWARD_NFT + toNano("0.15"),
+          },
+          {
+            to: domainAddr.toString(),
+            value: Number(_ton.fromNano(FORWARD_NFT + toNano("0.15"))),
             body: nftBody,
             bounce: true,
-          }),
+          },
         ]);
 
         // Poll TONAPI for the deployed auction contract address

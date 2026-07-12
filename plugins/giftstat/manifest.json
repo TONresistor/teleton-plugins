@@ -9,8 +9,8 @@
   },
   "license": "MIT",
   "entry": "index.js",
-  "teleton": ">=1.0.0",
-  "sdkVersion": ">=1.0.0",
+  "teleton": ">=0.9.0",
+  "sdkVersion": "^2.0.0",
   "tools": [
     { "name": "gift_collections", "description": "List all Telegram gift collections with supply and pricing data" },
     { "name": "gift_floor_prices", "description": "Get current floor prices by marketplace" },

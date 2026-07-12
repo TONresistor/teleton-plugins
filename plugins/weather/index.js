@@ -42,7 +42,7 @@ async function geocode(city) {
 export const manifest = {
   name: "weather",
   version: "1.0.0",
-  sdkVersion: ">=1.0.0",
+  sdkVersion: "^2.0.0",
   description: "Current weather and 7-day forecast via Open-Meteo (no API key required).",
 };
 

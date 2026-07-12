@@ -2,41 +2,14 @@
  * DeDust plugin -- DEX on TON
  *
  * Browse pools, search assets, view trades, get prices, estimate swaps,
- * and execute on-chain swaps on the DeDust protocol.
- * Agent wallet at ~/.teleton/wallet.json signs swap transactions.
+ * and execute on-chain swaps on the DeDust protocol through SDK v2.
  */
-
-import { createRequire } from "node:module";
-import { readFileSync, realpathSync } from "node:fs";
-import { join } from "node:path";
-import { homedir } from "node:os";
-
-// ---------------------------------------------------------------------------
-// CJS dependencies
-// ---------------------------------------------------------------------------
-
-const _require = createRequire(realpathSync(process.argv[1]));       // core: @ton/core, @ton/ton, @ton/crypto
-const _pluginRequire = createRequire(import.meta.url);                // local: plugin-specific deps
-
-const { Address, beginCell, toNano, fromNano, SendMode } = _require("@ton/core");
-const { WalletContractV5R1, TonClient, internal } = _require("@ton/ton");
-const { mnemonicToPrivateKey } = _require("@ton/crypto");
-
-// DeDust SDK -- loaded from plugin's local node_modules
-let DedustSDK = null;
-try {
-  DedustSDK = _pluginRequire("@dedust/sdk");
-} catch {
-  // SDK not available; on-chain tools will throw a clear error
-}
 
 // ---------------------------------------------------------------------------
 // Constants
 // ---------------------------------------------------------------------------
 
 const API_BASE = "https://api.dedust.io";
-const WALLET_FILE = join(homedir(), ".teleton", "wallet.json");
-const FACTORY_ADDR = "EQBfBWT7X2BHg9tXAxzhz2aKiNTU1tpt5NsiK0uSDW_YAJ67";
 
 // ---------------------------------------------------------------------------
 // Shared API helper
@@ -99,51 +72,6 @@ function formatAmount(raw, decimals) {
   const intPart = padded.slice(0, padded.length - decimals);
   const fracPart = padded.slice(padded.length - decimals).replace(/0+$/, "");
   return fracPart ? `${intPart}.${fracPart}` : intPart;
-}
-
-// ---------------------------------------------------------------------------
-// Wallet helper
-// ---------------------------------------------------------------------------
-
-async function getWalletAndClient() {
-  let walletData;
-  try {
-    walletData = JSON.parse(readFileSync(WALLET_FILE, "utf-8"));
-  } catch {
-    throw new Error("Agent wallet not found at " + WALLET_FILE);
-  }
-  if (!walletData.mnemonic || !Array.isArray(walletData.mnemonic)) {
-    throw new Error("Invalid wallet file: missing mnemonic array");
-  }
-
-  const keyPair = await mnemonicToPrivateKey(walletData.mnemonic);
-  const wallet = WalletContractV5R1.create({
-    workchain: 0,
-    publicKey: keyPair.publicKey,
-  });
-
-  let endpoint;
-  try {
-    const { getHttpEndpoint } = _pluginRequire("@orbs-network/ton-access");
-    endpoint = await getHttpEndpoint({ network: "mainnet" });
-  } catch {
-    endpoint = "https://toncenter.com/api/v2/jsonRPC";
-  }
-
-  const client = new TonClient({ endpoint });
-  const contract = client.open(wallet);
-
-  return { wallet, keyPair, client, contract };
-}
-
-function requireSDK() {
-  if (!DedustSDK) {
-    throw new Error(
-      "@dedust/sdk is not installed in the teleton runtime. " +
-      "Install it with: npm install @dedust/sdk"
-    );
-  }
-  return DedustSDK;
 }
 
 // ---------------------------------------------------------------------------
@@ -709,7 +637,7 @@ const dedustPrices = {
 const dedustSwapEstimate = {
   name: "dedust_swap_estimate",
   description:
-    'Estimate swap output on DeDust using on-chain pool get-methods. Returns expected output amount and trade fee. Use "native" for TON or a jetton address.',
+    'Estimate a DeDust swap through the Teleton SDK transaction broker. Use "native" for TON or a jetton address.',
   category: "data-bearing",
   scope: "always",
 
@@ -735,65 +663,17 @@ const dedustSwapEstimate = {
 
   execute: async (params) => {
     try {
-      const sdk = requireSDK();
-      const { Factory, PoolType, Asset } = sdk;
-
-      const inputAmount = Number(params.input_amount);
-      if (!Number.isFinite(inputAmount) || inputAmount <= 0) {
+      const amount = Number(params.input_amount);
+      if (!Number.isFinite(amount) || amount <= 0) {
         throw new Error("input_amount must be a positive number");
       }
-
-      _sdk?.log?.info(`Estimating swap: ${params.input_amount} ${params.input_token} -> ${params.output_token}`);
-
-      // Resolve assets
-      const assets = await getAssets();
-      const isInputNative = params.input_token === "native";
-      const isOutputNative = params.output_token === "native";
-
-      const inputDecimals = isInputNative
-        ? 9
-        : findAssetDecimals(assets, "jetton", params.input_token);
-      const outputDecimals = isOutputNative
-        ? 9
-        : findAssetDecimals(assets, "jetton", params.output_token);
-
-      const inputAsset = isInputNative
-        ? Asset.native()
-        : Asset.jetton(Address.parse(params.input_token));
-      const outputAsset = isOutputNative
-        ? Asset.native()
-        : Asset.jetton(Address.parse(params.output_token));
-
-      // Convert to raw amount
-      const rawInput = BigInt(
-        Math.round(inputAmount * 10 ** inputDecimals)
-      );
-
-      // Connect to chain
-      const { client } = await getWalletAndClient();
-      const factory = client.open(
-        Factory.createFromAddress(Address.parse(FACTORY_ADDR))
-      );
-
-      // Resolve pool
-      const pool = client.open(
-        await factory.getPool(PoolType.VOLATILE, [inputAsset, outputAsset])
-      );
-
-      // Check readiness
-      const { ReadinessStatus } = sdk;
-      const readiness = await pool.getReadinessStatus();
-      if (readiness !== ReadinessStatus.READY) {
-        throw new Error(
-          "Pool is not ready. It may not exist for this pair or pool type."
-        );
-      }
-
-      // Estimate
-      const estimate = await pool.getEstimatedSwapOut({
-        assetIn: inputAsset,
-        amountIn: rawInput,
+      const quote = await _sdk.ton.dex.quoteDeDust({
+        fromAsset: params.input_token === "native" ? "ton" : params.input_token,
+        toAsset: params.output_token === "native" ? "ton" : params.output_token,
+        amount,
+        slippage: 0.05,
       });
+      if (!quote) throw new Error("No ready DeDust pool for this pair");
 
       return {
         success: true,
@@ -801,23 +681,19 @@ const dedustSwapEstimate = {
           input_token: params.input_token,
           output_token: params.output_token,
           input_amount: params.input_amount,
-          estimated_output: formatAmount(
-            estimate.amountOut.toString(),
-            outputDecimals
-          ),
-          trade_fee: formatAmount(
-            estimate.tradeFee.toString(),
-            inputDecimals
-          ),
-          trade_fee_token: params.input_token,
-          pool_address: pool.address.toString(),
+          estimated_output: quote.expectedOutput,
+          min_output: quote.minOutput,
+          trade_fee: quote.fee,
+          rate: quote.rate,
+          price_impact: quote.priceImpact ?? null,
+          pool_type: quote.poolType ?? null,
         },
       };
-    } catch (err) {
-      _sdk?.log?.error(`Swap estimate failed: ${err.message}`);
+    } catch (error) {
+      _sdk.log.error(`Swap estimate failed: ${String(error?.message ?? error)}`);
       return {
         success: false,
-        error: String(err.message || err).slice(0, 500),
+        error: String(error?.message ?? error).slice(0, 500),
       };
     }
   },
@@ -830,7 +706,7 @@ const dedustSwapEstimate = {
 const dedustSwap = {
   name: "dedust_swap",
   description:
-    'Execute a swap on DeDust from the agent wallet. Supports TON->Jetton and Jetton->TON swaps. Use "native" for TON. Call dedust_swap_estimate first to preview the output.',
+    'Execute a DeDust swap through the Teleton SDK transaction broker. Use "native" for TON and call dedust_swap_estimate first.',
   category: "action",
   scope: "admin-only",
 
@@ -863,154 +739,35 @@ const dedustSwap = {
 
   execute: async (params) => {
     try {
-      const sdk = requireSDK();
-      const {
-        Factory,
-        PoolType,
-        Asset,
-        VaultNative,
-        VaultJetton,
-        JettonRoot,
-        ReadinessStatus,
-      } = sdk;
-
-      const slippage = params.slippage ?? 0.05;
-      const inputAmount = Number(params.input_amount);
-      if (!Number.isFinite(inputAmount) || inputAmount <= 0) {
+      const amount = Number(params.input_amount);
+      if (!Number.isFinite(amount) || amount <= 0) {
         throw new Error("input_amount must be a positive number");
       }
-
-      const isInputNative = params.input_token === "native";
-      const isOutputNative = params.output_token === "native";
-
-      if (isInputNative && isOutputNative) {
-        throw new Error("Cannot swap TON to TON");
-      }
-
-      _sdk?.log?.info(`Executing swap: ${params.input_amount} ${params.input_token} -> ${params.output_token} (slippage: ${slippage})`);
-
-      // Resolve assets and decimals
-      const allAssets = await getAssets();
-      const inputDecimals = isInputNative
-        ? 9
-        : findAssetDecimals(allAssets, "jetton", params.input_token);
-
-      const inputAsset = isInputNative
-        ? Asset.native()
-        : Asset.jetton(Address.parse(params.input_token));
-      const outputAsset = isOutputNative
-        ? Asset.native()
-        : Asset.jetton(Address.parse(params.output_token));
-
-      const rawInput = BigInt(
-        Math.round(inputAmount * 10 ** inputDecimals)
-      );
-
-      // Connect
-      const { wallet, keyPair, client, contract } =
-        await getWalletAndClient();
-      const factory = client.open(
-        Factory.createFromAddress(Address.parse(FACTORY_ADDR))
-      );
-
-      // Resolve pool
-      const pool = client.open(
-        await factory.getPool(PoolType.VOLATILE, [inputAsset, outputAsset])
-      );
-
-      const readiness = await pool.getReadinessStatus();
-      if (readiness !== ReadinessStatus.READY) {
-        throw new Error(
-          "Pool is not ready. It may not exist for this pair."
-        );
-      }
-
-      // Estimate to calculate min output with slippage
-      const estimate = await pool.getEstimatedSwapOut({
-        assetIn: inputAsset,
-        amountIn: rawInput,
+      const result = await _sdk.ton.dex.swapDeDust({
+        fromAsset: params.input_token === "native" ? "ton" : params.input_token,
+        toAsset: params.output_token === "native" ? "ton" : params.output_token,
+        amount,
+        slippage: params.slippage ?? 0.05,
       });
-
-      const minOut =
-        (estimate.amountOut * BigInt(Math.round((1 - slippage) * 10000))) /
-        10000n;
-
-      const sender = contract.sender(keyPair.secretKey);
-
-      if (isInputNative) {
-        // TON -> Jetton: use VaultNative
-        const tonVault = client.open(await factory.getNativeVault());
-
-        const vaultReadiness = await tonVault.getReadinessStatus();
-        if (vaultReadiness !== ReadinessStatus.READY) {
-          throw new Error("Native vault is not ready");
-        }
-
-        await tonVault.sendSwap(sender, {
-          poolAddress: pool.address,
-          amount: rawInput,
-          gasAmount: toNano("0.25"),
-          limit: minOut,
-        });
-      } else {
-        // Jetton -> TON or Jetton -> Jetton: use VaultJetton
-        const jettonVault = client.open(
-          await factory.getJettonVault(Address.parse(params.input_token))
-        );
-
-        const vaultReadiness = await jettonVault.getReadinessStatus();
-        if (vaultReadiness !== ReadinessStatus.READY) {
-          throw new Error("Jetton vault is not ready");
-        }
-
-        const jettonRoot = client.open(
-          JettonRoot.createFromAddress(Address.parse(params.input_token))
-        );
-        const jettonWallet = client.open(
-          await jettonRoot.getWallet(wallet.address)
-        );
-
-        const forwardPayload = VaultJetton.createSwapPayload({
-          poolAddress: pool.address,
-          limit: minOut,
-        });
-
-        await jettonWallet.sendTransfer(sender, toNano("0.3"), {
-          amount: rawInput,
-          destination: jettonVault.address,
-          responseAddress: wallet.address,
-          forwardAmount: toNano("0.25"),
-          forwardPayload,
-        });
-      }
-
-      const outputDecimals = isOutputNative
-        ? 9
-        : findAssetDecimals(allAssets, "jetton", params.output_token);
 
       return {
         success: true,
         data: {
           input_token: params.input_token,
           output_token: params.output_token,
-          input_amount: params.input_amount,
-          estimated_output: formatAmount(
-            estimate.amountOut.toString(),
-            outputDecimals
-          ),
-          min_output: formatAmount(minOut.toString(), outputDecimals),
-          slippage,
-          pool_address: pool.address.toString(),
-          wallet_address: wallet.address.toString(),
-          message:
-            "Swap transaction sent. Allow ~30 seconds for on-chain confirmation.",
+          input_amount: result.amountIn,
+          estimated_output: result.expectedOutput,
+          min_output: result.minOutput,
+          slippage: result.slippage,
+          tx_ref: result.txRef ?? null,
+          message: "Swap transaction confirmed by the Teleton transaction broker.",
         },
       };
-    } catch (err) {
-      _sdk?.log?.error(`Swap failed: ${err.message}`);
+    } catch (error) {
+      _sdk.log.error(`Swap failed: ${String(error?.message ?? error)}`);
       return {
         success: false,
-        error: String(err.message || err).slice(0, 500),
+        error: String(error?.message ?? error).slice(0, 500),
       };
     }
   },
@@ -1023,7 +780,7 @@ const dedustSwap = {
 export const manifest = {
   name: "dedust",
   version: "1.0.0",
-  sdkVersion: ">=1.0.0",
+  sdkVersion: "^2.0.0",
   description: "DeDust DEX on TON — browse pools, search assets, view trades, get prices, and execute on-chain swaps.",
 };
 

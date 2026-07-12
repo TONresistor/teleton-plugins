@@ -2,7 +2,7 @@
 
 Swap tokens, browse pools, and farm on [StonFi](https://ston.fi) DEX -- the largest decentralized exchange on TON.
 
-Read tools use the StonFi REST API. Swap execution uses the `@ston-fi/sdk` to build transactions, signed from the agent wallet.
+Read tools use the StonFi API. Swap execution uses the Teleton SDK v2 transaction broker; the plugin never reads wallet credentials.
 
 ## Tools
 
@@ -15,7 +15,7 @@ Read tools use the StonFi REST API. Swap execution uses the `@ston-fi/sdk` to bu
 | `stonfi_farms` | List active farming opportunities, optionally filtered by pool |
 | `stonfi_dex_stats` | Get overall StonFi DEX statistics (TVL, volume, wallets, trades) |
 | `stonfi_swap_quote` | Simulate a swap and get expected output, price impact, and fees |
-| `stonfi_swap` | Execute a token swap -- builds tx via SDK, signs with agent wallet |
+| `stonfi_swap` | Execute a token swap through the SDK v2 transaction broker |
 
 ## Install
 
@@ -46,13 +46,7 @@ Ask the AI:
 
 ## Dependencies
 
-Requires at runtime (provided by teleton):
-- `@ton/core` -- Address, SendMode
-- `@ton/ton` -- WalletContractV5R1, TonClient
-- `@ton/crypto` -- mnemonicToPrivateKey
-- `@ston-fi/sdk` -- required for `stonfi_swap` (transaction building)
-
-Agent wallet at `~/.teleton/wallet.json` is used for signing all on-chain transactions.
+`@ston-fi/api` is installed locally for read-only market data. Teleton SDK v2 provides the transaction broker used by `stonfi_swap`.
 
 ## Schemas
 
@@ -118,7 +112,7 @@ Get a swap quote on StonFi -- simulates a swap between two tokens and returns ex
 
 ### stonfi_swap
 
-Execute a token swap on StonFi DEX. Simulates the swap, builds the transaction via @ston-fi/sdk, and signs with the agent wallet. Call `stonfi_swap_quote` first to preview.
+Execute a token swap on StonFi through the Teleton SDK v2 transaction broker. Call `stonfi_swap_quote` first to preview.
 
 | Param | Type | Required | Default | Description |
 |-------|------|----------|---------|-------------|
