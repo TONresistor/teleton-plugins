@@ -4,7 +4,7 @@ import { readFile } from "node:fs/promises";
 import { Address, beginCell } from "../plugins/uranus/node_modules/@ton/core/dist/index.js";
 import { tools as createTools } from "../plugins/uranus/index.js";
 import { createActions } from "../plugins/uranus/actions.js";
-import { createHttp, assertPublicMetadataUrl } from "../plugins/uranus/http.js";
+import { createHttp, assertPublicMetadataUrl, resolvePublicMetadataTarget } from "../plugins/uranus/http.js";
 import { createState } from "../plugins/uranus/state.js";
 import { createHistory } from "../plugins/uranus/history.js";
 import { buildDeployCustomizedMeme, buildDeployMeme, decodeBuy, decodeClaim, decodeSellTokens } from "../plugins/uranus/abi.js";
@@ -219,6 +219,7 @@ test("metadata SSRF and Toncenter failures fail closed with bounded errors", asy
   await assert.rejects(assertPublicMetadataUrl("http://127.0.0.1/a.json"), (error) => error.code === "METADATA_SSRF_BLOCKED");
   await assert.rejects(assertPublicMetadataUrl("http://localhost/a.json"), (error) => error.code === "METADATA_SSRF_BLOCKED");
   await assert.rejects(assertPublicMetadataUrl("http://[::1]/a.json"), (error) => error.code === "METADATA_SSRF_BLOCKED");
+  await assert.rejects(assertPublicMetadataUrl("http://[0:0:0:0:0:0:0:1]/a.json"), (error) => error.code === "METADATA_SSRF_BLOCKED");
   const originalFetch = globalThis.fetch;
   try {
     globalThis.fetch = async () => new Response("{}", { status: 429 });
@@ -228,4 +229,57 @@ test("metadata SSRF and Toncenter failures fail closed with bounded errors", asy
   } finally {
     globalThis.fetch = originalFetch;
   }
+});
+
+test("metadata fetches stay pinned to the address validated for each redirect hop", async () => {
+  const resolved = [];
+  const fetched = [];
+  const responses = [
+    new Response(null, { status: 302, headers: { location: "https://cdn.example/meta.json" } }),
+    new Response('{"name":"safe"}', { status: 200, headers: { "content-type": "application/json" } }),
+  ];
+  const targets = new Map([
+    ["metadata.example", "203.0.113.10"],
+    ["cdn.example", "203.0.113.11"],
+  ]);
+  const http = createHttp(sdkBase(), {
+    resolveMetadataTarget: async (input) => {
+      const url = new URL(input);
+      const target = { url, address: targets.get(url.hostname), family: 4 };
+      resolved.push(target);
+      return target;
+    },
+    fetchPinnedMetadata: async (target) => {
+      fetched.push(target);
+      return responses.shift();
+    },
+  });
+
+  assert.deepEqual(await http.metadata("https://metadata.example/meta.json"), { name: "safe" });
+  assert.deepEqual(resolved.map(({ address }) => address), ["203.0.113.10", "203.0.113.11"]);
+  assert.deepEqual(fetched.map(({ address }) => address), ["203.0.113.10", "203.0.113.11"]);
+  assert.strictEqual(fetched[0], resolved[0]);
+  assert.strictEqual(fetched[1], resolved[1]);
+});
+
+test("metadata DNS is not resolved again between validation and connection", async () => {
+  let lookups = 0;
+  const fetched = [];
+  const lookupOnce = async () => {
+    lookups += 1;
+    return lookups === 1
+      ? [{ address: "203.0.113.20", family: 4 }]
+      : [{ address: "127.0.0.1", family: 4 }];
+  };
+  const http = createHttp(sdkBase(), {
+    resolveMetadataTarget: (input) => resolvePublicMetadataTarget(input, lookupOnce),
+    fetchPinnedMetadata: async (target) => {
+      fetched.push(target.address);
+      return new Response('{"name":"safe"}', { status: 200 });
+    },
+  });
+
+  assert.deepEqual(await http.metadata("https://rebind.example/meta.json"), { name: "safe" });
+  assert.equal(lookups, 1);
+  assert.deepEqual(fetched, ["203.0.113.20"]);
 });

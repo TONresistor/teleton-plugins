@@ -1,5 +1,8 @@
 import { lookup } from "node:dns/promises";
-import { isIP } from "node:net";
+import { request as httpRequest } from "node:http";
+import { request as httpsRequest } from "node:https";
+import { BlockList, isIP } from "node:net";
+import { Readable } from "node:stream";
 import { UranusError } from "./errors.js";
 
 const TONCENTER_ORIGIN = "https://toncenter.com";
@@ -7,6 +10,14 @@ const IPFS_ORIGIN = "https://ipfs.io";
 const TIMEOUT_MS = 10_000;
 const MAX_BYTES = 2 * 1024 * 1024;
 const MAX_REDIRECTS = 3;
+
+const privateIpv6 = new BlockList();
+privateIpv6.addAddress("::", "ipv6");
+privateIpv6.addAddress("::1", "ipv6");
+privateIpv6.addSubnet("fc00::", 7, "ipv6");
+privateIpv6.addSubnet("fe80::", 10, "ipv6");
+privateIpv6.addSubnet("ff00::", 8, "ipv6");
+privateIpv6.addSubnet("::ffff:0:0", 96, "ipv6");
 
 function isPrivateIpv4(ip) {
   const parts = ip.split(".").map(Number);
@@ -24,15 +35,10 @@ function isPrivateIpv4(ip) {
 function isPrivateIp(ip) {
   if (isIP(ip) === 4) return isPrivateIpv4(ip);
   if (isIP(ip) !== 6) return true;
-  const normalized = ip.toLowerCase();
-  return normalized === "::" || normalized === "::1" || normalized.startsWith("fc")
-    || normalized.startsWith("fd") || normalized.startsWith("fe8")
-    || normalized.startsWith("fe9") || normalized.startsWith("fea")
-    || normalized.startsWith("feb") || normalized.startsWith("ff")
-    || normalized.startsWith("::ffff:");
+  return privateIpv6.check(ip, "ipv6");
 }
 
-export async function assertPublicMetadataUrl(input) {
+export async function resolvePublicMetadataTarget(input, lookupImpl = lookup) {
   let url;
   try {
     url = new URL(input);
@@ -46,18 +52,23 @@ export async function assertPublicMetadataUrl(input) {
   }
   if (isIP(host)) {
     if (isPrivateIp(host)) throw new UranusError("METADATA_SSRF_BLOCKED", "Metadata host is local or private");
+    return { url, address: host, family: isIP(host) };
   } else {
     let records;
     try {
-      records = await lookup(host, { all: true, verbatim: true });
+      records = await lookupImpl(host, { all: true, verbatim: true });
     } catch (error) {
       throw new UranusError("UPSTREAM_UNAVAILABLE", "Metadata host could not be resolved", error);
     }
     if (!records.length || records.some(({ address }) => isPrivateIp(address))) {
       throw new UranusError("METADATA_SSRF_BLOCKED", "Metadata host resolves to a local or private address");
     }
+    return { url, address: records[0].address, family: records[0].family };
   }
-  return url;
+}
+
+export async function assertPublicMetadataUrl(input) {
+  return (await resolvePublicMetadataTarget(input)).url;
 }
 
 export function normalizeMetadataUri(uri) {
@@ -106,21 +117,55 @@ async function readBounded(response) {
   return new TextDecoder().decode(bytes);
 }
 
-async function fetchJsonOnce(url, options = {}, validateRedirect = null) {
+function fetchPinned(target, options = {}) {
+  const { url, address, family } = target;
+  const request = url.protocol === "https:" ? httpsRequest : httpRequest;
+  const headers = { accept: "application/json", ...options.headers, host: url.host };
+  const signal = AbortSignal.timeout(TIMEOUT_MS);
+
+  return new Promise((resolve, reject) => {
+    const req = request({
+      protocol: url.protocol,
+      hostname: address,
+      family,
+      port: url.port || undefined,
+      path: `${url.pathname}${url.search}`,
+      method: options.method ?? "GET",
+      headers,
+      signal,
+      ...(url.protocol === "https:" && !isIP(url.hostname.replace(/^\[|\]$/g, ""))
+        ? { servername: url.hostname }
+        : {}),
+    }, (response) => {
+      resolve(new Response(Readable.toWeb(response), {
+        status: response.statusCode,
+        statusText: response.statusMessage,
+        headers: response.headers,
+      }));
+    });
+    req.once("error", reject);
+    if (options.body !== undefined) req.write(options.body);
+    req.end();
+  });
+}
+
+async function fetchJsonOnce(url, options = {}, resolveTarget = null, pinnedFetch = fetchPinned) {
   let current = new URL(url);
   for (let redirects = 0; redirects <= MAX_REDIRECTS; redirects += 1) {
-    const response = await fetch(current, {
-      ...options,
-      redirect: "manual",
-      signal: AbortSignal.timeout(TIMEOUT_MS),
-      headers: { accept: "application/json", ...options.headers },
-    });
+    const response = resolveTarget
+      ? await pinnedFetch(await resolveTarget(current.toString()), options)
+      : await fetch(current, {
+        ...options,
+        redirect: "manual",
+        signal: AbortSignal.timeout(TIMEOUT_MS),
+        headers: { accept: "application/json", ...options.headers },
+      });
     if ([301, 302, 303, 307, 308].includes(response.status)) {
       if (redirects === MAX_REDIRECTS) throw new UranusError("UPSTREAM_UNAVAILABLE", "Too many upstream redirects");
       const location = response.headers.get("location");
       if (!location) throw new UranusError("INVALID_RESPONSE", "Upstream redirect is missing a location");
+      await response.body?.cancel();
       current = new URL(location, current);
-      if (validateRedirect) await validateRedirect(current.toString());
       continue;
     }
     const body = await readBounded(response);
@@ -135,11 +180,11 @@ async function fetchJsonOnce(url, options = {}, validateRedirect = null) {
   throw new UranusError("UPSTREAM_UNAVAILABLE", "Upstream redirect limit reached");
 }
 
-async function fetchJson(url, options = {}, validateRedirect = null) {
+async function fetchJson(url, options = {}, resolveTarget = null, pinnedFetch = fetchPinned) {
   let lastError;
   for (let attempt = 0; attempt < 2; attempt += 1) {
     try {
-      return await fetchJsonOnce(url, options, validateRedirect);
+      return await fetchJsonOnce(url, options, resolveTarget, pinnedFetch);
     } catch (error) {
       lastError = error;
       if (error instanceof UranusError && error.code !== "UPSTREAM_UNAVAILABLE") throw error;
@@ -163,7 +208,9 @@ function toncenterHeaders(sdk) {
   return key ? { "X-API-Key": key } : {};
 }
 
-export function createHttp(sdk) {
+export function createHttp(sdk, dependencies = {}) {
+  const resolveMetadataTarget = dependencies.resolveMetadataTarget ?? resolvePublicMetadataTarget;
+  const fetchPinnedMetadata = dependencies.fetchPinnedMetadata ?? fetchPinned;
   const toncenter = (path, params, ttl = 10_000) => {
     const url = new URL(`/api/v3/${path}`, TONCENTER_ORIGIN);
     for (const [key, value] of Object.entries(params)) if (value !== undefined) url.searchParams.set(key, String(value));
@@ -179,8 +226,7 @@ export function createHttp(sdk) {
     },
     async metadata(uri) {
       const normalized = normalizeMetadataUri(uri);
-      await assertPublicMetadataUrl(normalized);
-      return cached(sdk, `uranus:metadata:${normalized}`, 600_000, () => fetchJson(normalized, {}, assertPublicMetadataUrl));
+      return cached(sdk, `uranus:metadata:${normalized}`, 600_000, () => fetchJson(normalized, {}, resolveMetadataTarget, fetchPinnedMetadata));
     },
   };
 }
