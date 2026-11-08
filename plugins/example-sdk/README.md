@@ -14,7 +14,7 @@ cp -r plugins/example-sdk plugins/your-plugin
 |------|-------------|
 | `sdk_greet` | Greet a user and track count in isolated database |
 | `sdk_balance` | Check TON wallet balance and USD price |
-| `sdk_announce` | Send a message with optional inline buttons (DM only) |
+| `sdk_announce` | Send a message with optional inline buttons (admin only) |
 
 ## Install
 
@@ -34,13 +34,13 @@ Ask the AI:
 ## What this demonstrates
 
 - **`tools(sdk)`** — receiving the SDK instead of using a plain array
-- **`sdk.db`** — isolated SQLite database via `migrate()` export
+- **`sdk.db`** — database created automatically; `migrate()` creates the example's tables
 - **`sdk.ton`** — wallet address, balance, and price (read methods return null on failure)
 - **`sdk.telegram`** — sending messages with inline keyboards
 - **`sdk.pluginConfig`** — reading config with defaults from `manifest.defaultConfig`
 - **`sdk.log`** — prefixed logging
-- **`scope: "dm-only"`** — restricting a tool to DMs only
-- **Error handling** — catching `PluginSDKError` from write methods
+- **`scope: "admin-only"`** — restricting announcements to admins
+- **Error handling** — checking nullable reads and catching write failures
 - **Inline manifest** — `export const manifest` alongside `manifest.json`
 
 ## Configuration

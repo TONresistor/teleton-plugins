@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "targetSdkVersion": "2.1.0",
+  "targetSdkVersion": "2.1.1",
   "plugins": {
     "boards": {
       "status": "supported",

@@ -24,8 +24,8 @@ export const manifest = {
 };
 
 // ─── Database Migration ────────────────────────────────────────────────
-// Export migrate() to get an isolated SQLite database in sdk.db.
-// If you don't need persistence, skip this — sdk.db will be null.
+// Teleton creates an isolated SQLite database for every plugin.
+// Export migrate() only to create the tables your plugin needs.
 
 export function migrate(db) {
   db.exec(`
