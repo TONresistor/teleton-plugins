@@ -1,0 +1,58 @@
+{
+  "id": "groypfi-groypad",
+  "name": "GroypFi Groypad",
+  "version": "1.2.0",
+  "description": "Deploy, trade, and manage tokens on Groypad bonding curves on TON.",
+  "author": {
+    "name": "GroypFi",
+    "url": "https://github.com/Renryog"
+  },
+  "license": "MIT",
+  "entry": "index.js",
+  "teleton": ">=1.0.0",
+  "sdkVersion": ">=1.0.0",
+  "tools": [
+    {
+      "name": "groypad_deploy",
+      "description": "Deploy a new memecoin with metadata and an initial buy."
+    },
+    {
+      "name": "groypad_list_tokens",
+      "description": "List active Groypad tokens with market cap and progress."
+    },
+    {
+      "name": "groypad_token_info",
+      "description": "Get on-chain bonding curve data for a Groypad token."
+    },
+    {
+      "name": "groypad_get_quote",
+      "description": "Preview buy/sell quote without executing a trade."
+    },
+    {
+      "name": "groypad_buy",
+      "description": "Buy tokens on the Groypad bonding curve."
+    },
+    {
+      "name": "groypad_sell",
+      "description": "Sell tokens back to the Groypad bonding curve."
+    },
+    {
+      "name": "groypad_claim_fee",
+      "description": "Claim accumulated creator trading fees."
+    }
+  ],
+  "permissions": [],
+  "secrets": {
+    "SUPABASE_ANON_KEY": {
+      "required": true,
+      "description": "Supabase anon key for GroypFi endpoints"
+    },
+    "TONCENTER_API_KEY": {
+      "required": false,
+      "description": "Optional TonCenter API key for higher rate limits"
+    }
+  },
+  "tags": ["defi", "ton", "launchpad", "trading"],
+  "repository": "https://github.com/TONresistor/teleton-plugins",
+  "funding": null
+}
